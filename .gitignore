@@ -20,7 +20,7 @@ DerivedData
 *.hmap
 *.ipa
 *.xcuserstate
-**/.xcode.env.local
+ios/.xcode.env.local
 
 # Android/IntelliJ
 #
@@ -33,7 +33,6 @@ local.properties
 .cxx/
 *.keystore
 !debug.keystore
-.kotlin/
 
 # node.js
 #
@@ -49,6 +48,13 @@ yarn-error.log
 # https://docs.fastlane.tools/best-practices/source-control/
 
 **/fastlane/report.xml
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 **/fastlane/Preview.html
 **/fastlane/screenshots
 **/fastlane/test_output
@@ -57,7 +63,7 @@ yarn-error.log
 *.jsbundle
 
 # Ruby / CocoaPods
-**/Pods/
+/ios/Pods/
 /vendor/bundle/
 
 # Temporary files created by Metro to check the health of the file watcher
@@ -66,10 +72,22 @@ yarn-error.log
 # testing
 /coverage
 
-# Yarn
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/sdks
-!.yarn/versions
+# android/gradle
+# /android/app/build/
+# /android/build/
+/android/gradle.properties
+android/gradle.properties
+
+# environmental variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# yarn
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.yarn
+.env
