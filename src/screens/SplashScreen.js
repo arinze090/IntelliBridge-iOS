@@ -5,7 +5,7 @@ import { windowHeight, windowWidth } from '../utils/Dimensions';
 import { useTheme } from '../Context/ThemeContext';
 
 const SplashScreen = () => {
-  const { theme } = useTheme();
+  const { isDarkMode, theme } = useTheme();
 
   return (
     <SafeAreaView
@@ -14,7 +14,11 @@ const SplashScreen = () => {
       <View style={styles.logoContainer}>
         <Image
           style={styles.logo}
-          source={require('../assets/IntelliBridgeTransparentLogo.png')}
+          source={
+            isDarkMode
+              ? require('../assets/IntelliBridgeWhiteGold.png')
+              : require('../assets/IntelliBridgeBlue.png')
+          }
         />
       </View>
     </SafeAreaView>

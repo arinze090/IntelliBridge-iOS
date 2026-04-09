@@ -36,7 +36,7 @@ export const lightTheme = {
 };
 
 export const darkTheme = {
-  background: '#000',
+  background: '#030b19',
   text: '#fff',
   secondaryText: COLORS.appGrey5,
   borderColor: COLORS.appGrey5,

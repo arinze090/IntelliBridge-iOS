@@ -1,11 +1,9 @@
 import {
   FlatList,
-  Image,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import React, { useEffect, useState } from 'react';
@@ -197,12 +195,12 @@ const HomeScreen = ({ navigation }) => {
             color={theme?.text}
             onPress={() => navigation.navigate('Search', { books: reduxBooks })}
           />
-          <TouchableOpacity>
+          {/* <TouchableOpacity>
             <Image
               source={require('../assets/user-dummy-img.jpg')}
               style={styles.profileImage}
             />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </View>
 

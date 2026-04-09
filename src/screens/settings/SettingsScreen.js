@@ -6,6 +6,7 @@ import {
   View,
   TouchableOpacity,
   Switch,
+  Image,
 } from 'react-native';
 import React, { useRef, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
@@ -23,8 +24,15 @@ import FormInput from '../../components/form/FormInput';
 import FormButton from '../../components/form/FormButton';
 import axiosInstance from '../../utils/api-client';
 import { RNToast } from '../../Library/Common';
+import { COLORS } from '../../themes/themes';
+import SkeletonPlaceholder from 'react-native-skeleton-placeholder';
 
 const settings = [
+  {
+    iconName: 'person-outline',
+    name: 'Edit Profile',
+    navigate: 'EditProfile',
+  },
   {
     iconName: 'bookmarks-outline',
     name: 'Bookmarks',
@@ -40,6 +48,11 @@ const settings = [
     name: 'Orders',
     navigate: 'BookOrders',
   },
+  // {
+  //   iconName: 'person-outline',
+  //   name: 'My Account',
+  //   navigate: 'MyAccount',
+  // },
   {
     iconName: 'information-circle-outline',
     name: 'About Us',
@@ -60,6 +73,8 @@ const SettingsScreen = () => {
 
   const dispatch = useDispatch();
   const state = useSelector(state => state);
+  const loggedInUser = state?.user?.user;
+  console.log('loggedInUser', loggedInUser);
 
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -143,6 +158,44 @@ const SettingsScreen = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: 10 }}
       >
+        <View style={styles.profileSection}>
+          <TouchableOpacity
+          // onPress={() => {
+          //   setIsVisible(true);
+          // }}
+          >
+            {loading && loggedInUser?.profilePicture ? (
+              <SkeletonPlaceholder
+                highlightColor={COLORS.skeletonBgColor}
+                backgroundColor={COLORS.skeletonHighlightColor}
+                speed={1900}
+              >
+                <Image style={styles.image} source={''} />
+              </SkeletonPlaceholder>
+            ) : (
+              <Image
+                source={
+                  loggedInUser?.profilePicture
+                    ? { uri: loggedInUser?.profile_pictures[0] }
+                    : require('../../assets/user-dummy-img.jpg')
+                }
+                style={styles.image}
+                // onPress={() => {
+                //   setIsVisible(true);
+                // }}
+              />
+            )}
+          </TouchableOpacity>
+          <View style={styles.profileDetails}>
+            <Text style={[styles.profileName, { color: theme?.text }]}>
+              {loggedInUser?.username}
+            </Text>
+            <Text style={[styles.profileEmail, { color: theme?.text }]}>
+              {loggedInUser?.email}
+            </Text>
+          </View>
+        </View>
+
         {settings?.map((cur, i) => (
           <ProfileOptionsDisplay
             key={i}
@@ -289,5 +342,34 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     justifyContent: 'center',
     alignContent: 'center',
+  },
+  profileSection: {
+    display: 'flex',
+    // flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+  },
+  profileDetails: {
+    alignItems: 'center',
+    // marginLeft: 20,
+    // justifyContent: 'space-between',
+    // backgroundColor: 'red',
+  },
+  image: {
+    width: 70,
+    height: 70,
+    borderRadius: 40,
+    marginBottom: 10,
+  },
+  profileName: {
+    fontSize: 18,
+    fontWeight: '600',
+    // lineHeight: 24,
+  },
+  profileEmail: {
+    fontSize: 14,
+    fontWeight: '400',
+    // lineHeight: 24,
+    color: '#1E1E1E80',
   },
 });

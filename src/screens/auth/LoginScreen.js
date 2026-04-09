@@ -21,7 +21,7 @@ import axiosInstance from '../../utils/api-client';
 
 const LoginScreen = ({ navigation }) => {
   const dispatch = useDispatch();
-  const { theme } = useTheme();
+  const { isDarkMode, theme } = useTheme();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -95,7 +95,11 @@ const LoginScreen = ({ navigation }) => {
       <KeyboardAvoidingComponent>
         <View style={styles.imageContainer}>
           <Image
-            source={require('../../assets/IntelliBridgeTransparentLogo.png')}
+            source={
+              isDarkMode
+                ? require('../../assets/IntelliBridgeWhiteGold.png')
+                : require('../../assets/IntelliBridgeBlue.png')
+            }
             style={styles.intelliBridgeLogo}
           />
         </View>

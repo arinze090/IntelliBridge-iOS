@@ -1,0 +1,336 @@
+import {
+  Alert,
+  Image,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import React, { useRef, useState } from 'react';
+import { usePaystack } from 'react-native-paystack-webview';
+import { useDispatch, useSelector } from 'react-redux';
+import Toast from 'react-native-toast-message';
+import * as RNIap from 'react-native-iap';
+
+import SafeAreaViewComponent from '../../components/common/SafeAreaViewComponent';
+import HeaderTitle from '../../components/common/HeaderTitle';
+import { useTheme } from '../../Context/ThemeContext';
+import { windowWidth } from '../../utils/Dimensions';
+import { COLORS } from '../../themes/themes';
+import FormButton from '../../components/form/FormButton';
+import { formatToNaira, RNToast } from '../../Library/Common';
+import ScrollViewSpace from '../../components/common/ScrollViewSpace';
+import {
+  removeBookFromBookmarks,
+  saveBookmarkedBooks,
+} from '../../redux/features/books/booksSlice';
+import axiosInstance from '../../utils/api-client';
+import CategoryCard from '../../components/cards/CategoryCard';
+import BottomSheet from '../../components/bottomSheet/BottomSheet';
+import PaymentButtons from '../../components/form/PaymentButtons';
+import ProgressBar from '../../components/common/ProgressBar';
+
+const LibraryBookDetails = ({ navigation, route }) => {
+  const item = route?.params;
+  console.log('hhfhf', item);
+
+  const { theme } = useTheme();
+  const bottomSheetRef = useRef();
+
+  const dispatch = useDispatch();
+  const state = useSelector(state => state);
+  const loggedInUser = state?.user?.user;
+  const bookmarkedBooks = state?.books?.bookmarkedBooks || [];
+  const isBookBookmarked = bookmarkedBooks?.some(
+    book => book?._id === item?._id,
+  );
+
+  // Paystack Integration
+  const { popup } = usePaystack();
+
+  const [expanded, setExpanded] = useState(false);
+  const [showToggle, setShowToggle] = useState(false);
+  const [authorExpanded, setAuthorExpanded] = useState(false);
+  const [showAuthorToggle, setShowAuthorToggle] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const bookCheckout = async (paymentMethod, paymentReference, paymentData) => {
+    const bookOrder = {
+      paymentMethod: paymentMethod,
+      transactionReference: paymentReference,
+      items: [item?._id],
+      paymentData: paymentData,
+    };
+
+    console.log('bookOrder', bookOrder);
+
+    setLoading(true);
+
+    try {
+      await axiosInstance({
+        url: '/api/orders/checkout',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        data: bookOrder,
+      }).then(res => {
+        setLoading(false);
+        console.log('bookCheckout res', res);
+        RNToast(Toast, 'Your purchase has been verified ✅');
+
+        // save to redux the book purchased
+        // dispatch(saveBoughtBooks(item));
+
+        navigation.navigate('Home', { screen: 'HomeScreen' });
+
+        // later on navigate to the Bookscreen to fetch and show the list of books the user bought and reading,
+        // then navigate to the BookReader with the selected book details
+        navigation.navigate('Books', {
+          screen: 'BooksScreen',
+          params: { item },
+        });
+      });
+    } catch (error) {
+      console.error('bookCheckout error:', error?.response);
+      setLoading(false);
+      RNToast(Toast, 'An error occured purchase has been verified ✅');
+      Alert.alert(
+        'Payment Failed',
+        `Your payment of ${formatToNaira(item?.price)} for ${
+          item?.bookTitle
+        } failed. If your account has been debited, please contact our support helpline to get it resolved`,
+      );
+    }
+  };
+
+  const buyBookNow = () => {
+    // Close bottom sheet first so the Paystack popup can appear on top
+    bottomSheetRef.current?.close();
+
+    // Add a small delay to ensure bottom sheet is closed before showing popup
+    setTimeout(() => {
+      console.log('Book purchased:', item?.bookTitle);
+
+      popup?.checkout({
+        email: loggedInUser?.email,
+        amount: item?.price,
+        channels: ['bank_transfer'],
+
+        onSuccess: res => {
+          console.log('Success:', res);
+          const payStackPaymentReference = res?.reference;
+          const paystackPaymentData = res;
+
+          bookCheckout(
+            'paystack',
+            payStackPaymentReference,
+            paystackPaymentData,
+          );
+        },
+        onCancel: () => console.log('User cancelled'),
+        onLoad: res => console.log('WebView Loaded:', res),
+        onError: err => console.log('WebView Error:', err),
+      });
+    }, 300);
+  };
+
+  const bookmarkBook = () => {
+    // Implement your book bookmarking logic here
+    console.log('Book bookmarked:', item?.title);
+    if (isBookBookmarked) {
+      // If the book is already bookmarked, remove it from bookmarks
+      dispatch(removeBookFromBookmarks(item));
+    } else {
+      // If the book is not bookmarked, add it to bookmarks
+      dispatch(saveBookmarkedBooks(item));
+    }
+  };
+
+  return (
+    <SafeAreaViewComponent>
+      <HeaderTitle
+        leftIcon={'chevron-back-outline'}
+        onLeftIconPress={() => navigation.goBack()}
+        rightIcon={isBookBookmarked ? 'bookmark' : 'bookmark-outline'}
+        onRightIconPress={() => {
+          bookmarkBook();
+        }}
+        progress={item?.progress}
+      />
+
+      {/* Book Information */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.bookInfoContainer}
+      >
+        <Image
+          style={styles.bookDetailsImage}
+          source={{ uri: item?.bookInfo?.bookImage }}
+        />
+        <Text style={[styles.bookDetailsTitle, { color: theme?.text }]}>
+          {item?.bookInfo?.bookTitle}
+        </Text>
+        <Text
+          style={[
+            styles.bookDetailsAuthor,
+            {
+              color: theme?.text,
+              fontSize: 14,
+              textAlign: 'center',
+              marginBottom: 10,
+            },
+          ]}
+        >
+          By:{' '}
+          <Text
+            style={{
+              color: theme?.secondaryText,
+              fontSize: 15,
+              fontWeight: '600',
+            }}
+          >
+            {item?.bookInfo?.author}
+          </Text>
+        </Text>
+
+        <View style={{ flexDirection: 'row' }}>
+          <CategoryCard
+            iconName={'layers-outline'}
+            props={item?.bookInfo?.category?.name}
+          />
+          <CategoryCard
+            iconName={'book-outline'}
+            props={item?.bookInfo?.bookFormat == 'epub' && 'E-book'}
+          />
+        </View>
+
+        {/* Book Information */}
+        <Text style={[styles.aboutAuthor, { color: theme?.text }]}>
+          About the Book
+        </Text>
+        <Text
+          numberOfLines={expanded ? undefined : 4}
+          onTextLayout={e => {
+            if (e.nativeEvent.lines.length > 3) {
+              setShowToggle(true);
+            }
+          }}
+          style={[styles.bookDetailsDescription, { color: theme?.text }]}
+        >
+          {item?.bookInfo?.description}
+        </Text>
+        {showToggle && (
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() => setExpanded(prev => !prev)}
+          >
+            <Text style={{ color: COLORS.legacyBridgePrimary, marginTop: 4 }}>
+              {expanded ? 'Read Less' : 'Read More'}
+            </Text>
+          </TouchableOpacity>
+        )}
+        <Text style={[styles.aboutAuthor, { color: theme?.text }]}>
+          About the Author
+        </Text>
+        <Text
+          numberOfLines={authorExpanded ? undefined : 4}
+          onTextLayout={e => {
+            if (e.nativeEvent.lines.length > 3) {
+              setShowAuthorToggle(true);
+            }
+          }}
+          style={[styles.bookDetailsDescription, { color: theme?.text }]}
+        >
+          {item?.bookInfo?.aboutAuthor}
+        </Text>
+        {showAuthorToggle && (
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() => setAuthorExpanded(prev => !prev)}
+          >
+            <Text style={{ color: COLORS.legacyBridgePrimary, marginTop: 4 }}>
+              {authorExpanded ? 'Read Less' : 'Read More'}
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Progress Segment */}
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 10,
+            width: '80%',
+          }}
+        >
+          <Text
+            style={{ color: theme?.text, fontSize: 16, fontWeight: 'bold' }}
+          >
+            Progress:{' '}
+            <Text style={{ color: theme?.text, fontSize: 12 }}>
+              {item?.progress || 0}%
+            </Text>
+          </Text>
+          <ProgressBar progress={item?.progress || 0} />
+        </View>
+        <ScrollViewSpace />
+      </ScrollView>
+
+      <View style={styles.btnSection}>
+        <FormButton
+          title={item?.isReading ? 'Continue Reading' : 'Read Now'}
+          loading={loading}
+          onPress={() => navigation.navigate('BookReader', item?.bookInfo)}
+        />
+      </View>
+    </SafeAreaViewComponent>
+  );
+};
+
+export default LibraryBookDetails;
+
+const styles = StyleSheet.create({
+  bookInfoContainer: {
+    padding: 20,
+    // justifyContent: 'center',
+    // alignItems: 'center',
+    gap: 10,
+  },
+  bookDetailsImage: {
+    width: windowWidth / 2,
+    height: (windowWidth / 2) * 1.5,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    // backgroundColor: 'red',
+    alignContent: 'center',
+    alignSelf: 'center',
+  },
+  bookDetailsTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  btnSection: {
+    // flexDirection: 'row',
+    justifyContent: 'center',
+    // marginTop: windowHeight / 5,
+    // height: windowHeight / 15,
+    position: 'absolute',
+    padding: 15,
+    bottom: 25,
+    width: windowWidth,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)', // translucent
+    //     // backgroundColor: '#18191a',
+    // position: 'absolute',
+    borderRadius: 60,
+  },
+  aboutAuthor: {
+    fontSize: 17,
+    marginTop: '20',
+    fontWeight: '700',
+  },
+});

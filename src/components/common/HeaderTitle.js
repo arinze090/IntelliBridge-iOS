@@ -38,9 +38,27 @@ const HeaderTitle = ({
           {headerTitle}
         </Text>
       )}
-      {userDestination == 'Registration' && progress && (
+      {/* {userDestination == 'Registration' && progress && (
         <ProgressBar progress={progress} />
+      )} */}
+
+      {progress && (
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 10,
+            width: '70%',
+          }}
+        >
+          <Text style={{ color: theme?.text, fontSize: 12 }}>
+            {progress || 0}%
+          </Text>
+          <ProgressBar progress={progress || 0} />
+        </View>
       )}
+
+      {/* {progress && <ProgressBar progress={progress} />} */}
 
       {rightIcon ? (
         <TouchableOpacity activeOpacity={0.9} onPress={onRightIconPress}>

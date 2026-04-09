@@ -75,7 +75,8 @@ const BooksScreen = ({ navigation }) => {
       <ReadingBookCard
         props={item?.bookInfo}
         bookProgress={item?.progress || 0}
-        onPress={() => navigation.navigate('BookReader', item?.bookInfo)}
+        // onPress={() => navigation.navigate('BookReader', item?.bookInfo)}
+        onPress={() => navigation.navigate('LibraryBookDetails', item)}
       />
     );
   };

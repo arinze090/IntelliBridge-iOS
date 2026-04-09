@@ -5,17 +5,25 @@ import { useNavigation } from '@react-navigation/native';
 
 import { windowWidth } from '../../utils/Dimensions';
 import { COLORS } from '../../themes/themes';
+import { useTheme } from '../../Context/ThemeContext';
 
 const BookSearchBar = props => {
   const navigation = useNavigation();
+  const { theme } = useTheme();
 
   return (
     <View style={styles.container}>
       <View
         style={
           !props?.clicked
-            ? styles.searchBar__unclicked
-            : styles.searchBar__clicked
+            ? [
+                styles.searchBar__unclicked,
+                { backgroundColor: theme?.borderColor },
+              ]
+            : [
+                styles.searchBar__clicked,
+                { backgroundColor: theme?.borderColor },
+              ]
         }
       >
         {/* search Icon */}
@@ -97,7 +105,7 @@ const styles = StyleSheet.create({
     padding: 10,
     flexDirection: 'row',
     width: '80%',
-    backgroundColor: '#212121',
+    // backgroundColor: '#212121',
     borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'space-evenly',
@@ -107,5 +115,6 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     width: '90%',
     color: 'white',
+    // backgroundColor: 'red',
   },
 });

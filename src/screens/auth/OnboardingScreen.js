@@ -1,13 +1,4 @@
-import {
-  Alert,
-  Image,
-  ImageBackground,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import React, { useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AppIntroSlider from 'react-native-app-intro-slider';
@@ -185,7 +176,7 @@ const styles = StyleSheet.create({
 
   renderContainer: {
     flex: 1,
-    backgroundColor: COLORS.black,
+    backgroundColor: '#030b19',
     alignItems: 'center',
     justifyContent: 'center',
     // paddingHorizontal: 30,

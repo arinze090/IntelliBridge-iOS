@@ -7,7 +7,7 @@ export const COLORS = {
 
   // legacybridge colors
   legacyBridgePrimary: '#d7b65d',
-  legacyBridgeSecondary: '#000000',
+  legacyBridgeSecondary: '#030b19',
   legacyBridgeRed: '#B60044',
   legacyBridgeBlue: '#042754',
 

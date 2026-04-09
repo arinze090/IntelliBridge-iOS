@@ -27,7 +27,7 @@ import ScrollViewSpace from '../../components/common/ScrollViewSpace';
 
 const RegisterScreen = ({ navigation }) => {
   const dispatch = useDispatch();
-  const { theme } = useTheme();
+  const { isDarkMode, theme } = useTheme();
 
   // Passmeter validation
   const MAX_LEN = 15,
@@ -150,7 +150,11 @@ const RegisterScreen = ({ navigation }) => {
         <ScrollView showsVerticalScrollIndicator={false} vertical>
           <View style={styles.imageContainer}>
             <Image
-              source={require('../../assets/IntelliBridgeTransparentLogo.png')}
+              source={
+                isDarkMode
+                  ? require('../../assets/IntelliBridgeWhiteGold.png')
+                  : require('../../assets/IntelliBridgeBlue.png')
+              }
               style={styles.intelliBridgeLogo}
             />
           </View>

@@ -30,6 +30,8 @@ import BookmarksScreen from './settings/BookmarksScreen';
 import AudioBooksScreen from './books/AudioBooksScreen';
 import WishlistScreen from './settings/WishlistScreen';
 import BookOrdersScreen from './settings/BookOrdersScreen';
+import EditProfile from './settings/EditProfile';
+import LibraryBookDetails from './books/LibraryBookDetails';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -144,6 +146,14 @@ const BooksStack = ({ navigation }) => (
       }}
     />
     <Stack.Screen
+      name="LibraryBookDetails"
+      component={LibraryBookDetails}
+      options={{
+        headerShown: false,
+        headerBackTitleVisible: false,
+      }}
+    />
+    <Stack.Screen
       name="BookReader"
       component={BookReader}
       options={{
@@ -199,6 +209,15 @@ const SettingsStack = () => {
           headerTitleStyle: {
             color: theme?.text,
           },
+        }}
+      />
+
+      <Stack.Screen
+        name="EditProfile"
+        component={EditProfile}
+        options={{
+          headerShown: false,
+          headerBackTitleVisible: false,
         }}
       />
 
@@ -267,7 +286,12 @@ const MainScreen = () => {
       screenOptions={({ route }) => ({
         tabBarStyle: (route => {
           const routeName = getFocusedRouteNameFromRoute(route) ?? '';
-          const routeWithNoTarBar = ['BookDetails', 'Login', 'Register'];
+          const routeWithNoTarBar = [
+            'BookDetails',
+            'Login',
+            'Register',
+            'LibraryBookDetails',
+          ];
           if (routeWithNoTarBar.includes(routeName)) {
             return { display: 'none' };
           }
@@ -336,9 +360,9 @@ const MainScreen = () => {
         name="Settings"
         component={SettingsStack}
         options={{
-          tabBarLabel: 'Settings',
+          tabBarLabel: 'Account',
           tabBarIcon: ({ color }) => (
-            <Ionicons name="settings-outline" color={color} size={28} />
+            <Ionicons name="person-outline" color={color} size={28} />
           ),
           headerShown: false,
           headerStyle: {
