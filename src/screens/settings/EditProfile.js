@@ -7,22 +7,23 @@ import {
 } from 'react-native';
 import React, { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useDispatch, useSelector } from 'react-redux';
 import Toast from 'react-native-toast-message';
 import ImageCropPicker from 'react-native-image-crop-picker';
 
 import SafeAreaViewComponent from '../../components/common/SafeAreaViewComponent';
-import { useTheme } from '../../Context/ThemeContext';
 import ScrollViewSpace from '../../components/common/ScrollViewSpace';
 import FormInput from '../../components/form/FormInput';
 import FormButton from '../../components/form/FormButton';
 import HeaderTitle from '../../components/common/HeaderTitle';
 import FixedBottomContainer from '../../components/common/FixedBottomContainer';
+import { RNToast } from '../../Library/Common';
+import axiosInstance from '../../utils/api-client';
+import { updateUserProfile } from '../../redux/features/user/userSlice';
+import { uploadProfilePictureToCloudinary } from '../../utils/CloudinaryUpload';
 
 const EditProfile = () => {
   const navigation = useNavigation();
-  const { isDarkMode, theme } = useTheme();
 
   const dispatch = useDispatch();
   const state = useSelector(state => state);
@@ -43,9 +44,7 @@ const EditProfile = () => {
   const [formError, setFormError] = useState('');
 
   const [image, setImage] = useState(null);
-  console.log('image', image);
-
-  //   navigate into the book after  home page
+  // console.log('image', image);
 
   const pickImages = async () => {
     try {
@@ -70,7 +69,60 @@ const EditProfile = () => {
   };
 
   const updateProfile = async () => {
-    // Implement profile update logic here, including form validation and API call
+    try {
+      setLoading(true);
+
+      let uploadImage = null;
+
+      if (image) {
+        console.log('Uploading image...');
+
+        uploadImage = await uploadProfilePictureToCloudinary(
+          image,
+          loggedInUser?._id,
+        );
+
+        console.log('Upload result:', uploadImage);
+      }
+
+      const profileData = {
+        username,
+        profilePicture: uploadImage?.secure_url
+          ? uploadImage?.secure_url
+          : loggedInUser?.profilePicture,
+        profilePictureId: uploadImage?.public_id
+          ? uploadImage?.public_id
+          : loggedInUser?.profilePictureId,
+      };
+
+      console.log('Updating profile with data:', profileData);
+
+      const res = await axiosInstance({
+        url: '/api/auth/profile/',
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        data: profileData,
+      });
+
+      console.log('updateProfileResponse', res);
+
+      dispatch(updateUserProfile(res?.data));
+      RNToast(Toast, 'Profile updated successfully!');
+      navigation.goBack();
+    } catch (error) {
+      console.error('Profile update error:', error?.response);
+      RNToast(
+        Toast,
+        'An error occurred while updating your profile, Please try again later.',
+      );
+      setFormError(
+        'An error occurred while updating your profile, Please try again later.',
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -93,7 +145,7 @@ const EditProfile = () => {
                 image
                   ? { uri: image?.path }
                   : loggedInUser?.profilePicture
-                  ? { uri: loggedInUser?.profile_pictures[0] }
+                  ? { uri: loggedInUser?.profilePicture }
                   : require('../../assets/user-dummy-img.jpg')
               }
               style={styles.image}

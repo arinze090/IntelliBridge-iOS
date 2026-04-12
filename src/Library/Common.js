@@ -13,6 +13,14 @@ export const obscureEmail = emilString => {
   return name.substring(0, 3).concat('****@').concat(domain);
 };
 
+export const generateProductId = title => {
+  return `com.intellibridge.book.${title
+    ?.toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s]/g, '')
+    .replace(/\s+/g, '_')}`;
+};
+
 export const getGreeting = () => {
   const currentHour = new Date().getHours();
 

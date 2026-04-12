@@ -70,6 +70,12 @@ const userSlice = createSlice({
     saveUserOrders: (state, action) => {
       state.userOrders = action.payload;
     },
+    updateUserProfile: (state, action) => {
+      state.user = {
+        ...state.user,
+        ...action.payload,
+      };
+    },
   },
 });
 
@@ -88,5 +94,6 @@ export const {
   APILastFetchTime,
   saveLoginTime,
   saveUserOrders,
+  updateUserProfile,
 } = userSlice.actions;
 export default userSlice.reducer;

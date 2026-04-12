@@ -1,18 +1,17 @@
 import {
   Alert,
   Image,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { usePaystack } from 'react-native-paystack-webview';
 import { useDispatch, useSelector } from 'react-redux';
 import Toast from 'react-native-toast-message';
-import * as RNIap from 'react-native-iap';
+import { useIAP, ErrorCode } from 'react-native-iap';
 
 import SafeAreaViewComponent from '../../components/common/SafeAreaViewComponent';
 import HeaderTitle from '../../components/common/HeaderTitle';
@@ -20,7 +19,11 @@ import { useTheme } from '../../Context/ThemeContext';
 import { windowWidth } from '../../utils/Dimensions';
 import { COLORS } from '../../themes/themes';
 import FormButton from '../../components/form/FormButton';
-import { formatToNaira, RNToast } from '../../Library/Common';
+import {
+  formatToNaira,
+  generateProductId,
+  RNToast,
+} from '../../Library/Common';
 import ScrollViewSpace from '../../components/common/ScrollViewSpace';
 import {
   removeBookFromBookmarks,
@@ -30,8 +33,6 @@ import axiosInstance from '../../utils/api-client';
 import CategoryCard from '../../components/cards/CategoryCard';
 import BottomSheet from '../../components/bottomSheet/BottomSheet';
 import PaymentButtons from '../../components/form/PaymentButtons';
-
-const isIos = Platform.OS === 'ios';
 
 const BookDetails = ({ navigation, route }) => {
   const item = route?.params;
@@ -47,6 +48,12 @@ const BookDetails = ({ navigation, route }) => {
   const isBookBookmarked = bookmarkedBooks?.some(
     book => book?._id === item?._id,
   );
+
+  const appleProductId = generateProductId(item?.bookTitle);
+  // console.log('Generated Product ID:', appleProductId);
+
+  const [appleProductData, setAppleProductData] = useState();
+  // console.log('Generated appleProductData:', appleProductData);
 
   // Paystack Integration
   const { popup } = usePaystack();
@@ -149,6 +156,77 @@ const BookDetails = ({ navigation, route }) => {
       dispatch(saveBookmarkedBooks(item));
     }
   };
+
+  const payWithApplePay = async () => {
+    // Implement Apple Pay logic here
+    console.log('Paying with Apple Pay for:', item?.bookTitle);
+
+    requestPurchase({
+      request: { apple: { sku: appleProductData?.[0]?.id } },
+      type: 'in-app',
+    });
+  };
+
+  const {
+    connected,
+    products,
+    fetchProducts,
+    requestPurchase,
+    validateReceipt,
+  } = useIAP({
+    onPurchaseSuccess: purchase => {
+      console.log('Purchase successful:', purchase);
+      // validate the purchase receipt with Apple and then
+      // submit to the backend for verification and fulfillment (unlocking the book)
+      validatePurchase(purchase);
+    },
+    onPurchaseError: error => {
+      console.error('Purchase failed:', error);
+      // Handle purchase error
+      if (error?.code === ErrorCode?.UserCancelled) {
+        console.log('User cancelled the purchase');
+      } else {
+        Alert.alert(
+          'Purchase Failed',
+          'An error occurred during the purchase. Please try again.',
+        );
+      }
+    },
+  });
+
+  const validatePurchase = async purchase => {
+    try {
+      const result = await validateReceipt({
+        apple: { sku: purchase?.productId },
+      });
+
+      if (result?.isValid) {
+        console.log('Receipt is valid', result);
+        // submit to the backend for verification and fulfillment (unlocking the book)
+        bookCheckout('apple_pay', purchase?.transactionId, purchase);
+      }
+    } catch (error) {
+      console.error('Validation failed:', error);
+      Alert.alert(
+        'Purchase Verification Failed',
+        'An error occurred while verifying the purchase. Please try again.',
+      );
+    }
+  };
+
+  useEffect(() => {
+    if (connected) {
+      fetchProducts({
+        skus: [appleProductId],
+        type: 'in-app',
+      });
+    }
+  }, [connected]);
+
+  useEffect(() => {
+    console.log('Products updated:', products);
+    setAppleProductData(products);
+  }, [products]);
 
   return (
     <SafeAreaViewComponent>
@@ -308,13 +386,13 @@ const BookDetails = ({ navigation, route }) => {
                 fontSize: 16,
               }}
             >
-              Paystack - Card or Bank Transfer
+              Pay with - Card or Bank Transfer
             </Text>
           </TouchableOpacity>
 
           {/* Add more payment options here */}
           <PaymentButtons
-            onPress={buyBookNow}
+            onPress={payWithApplePay}
             paymentMethod="Pay"
             paymentMethodIcon="logo-apple"
           />

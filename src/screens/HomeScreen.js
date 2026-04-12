@@ -1,15 +1,16 @@
 import {
   FlatList,
+  Image,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useDispatch, useSelector } from 'react-redux';
-import * as RNIap from 'react-native-iap';
 
 import SafeAreaViewComponent from '../components/common/SafeAreaViewComponent';
 import { useTheme } from '../Context/ThemeContext';
@@ -29,9 +30,6 @@ const HomeScreen = ({ navigation }) => {
 
   const [isGrid, setIsGrid] = useState(true);
   const [loading, setLoading] = useState(false);
-
-  const [appStoreProducts, setAppStoreProducts] = useState([]);
-  console.log('appStoreProducts', appStoreProducts);
 
   const toggleLayout = () => {
     setIsGrid(!isGrid);
@@ -118,58 +116,6 @@ const HomeScreen = ({ navigation }) => {
     fetchBooksData();
   };
 
-  // In-App Purchase (IAP) setup
-  useEffect(() => {
-    let isMounted = true;
-
-    const initIAP = async () => {
-      setLoading(true);
-
-      try {
-        const fetchedPlans = await fetchBooksData();
-
-        if (!isMounted) {
-          return;
-        }
-
-        await RNIap.initConnection();
-
-        const iosSubs = await RNIap.getSubscriptions({ skus: itemSkus });
-
-        console.log('iOS Subscriptions:', iosSubs);
-
-        const enrichedPlans = fetchedPlans.map(plan => {
-          const matchingProduct = iosSubs.find(
-            p => p.productId === plan.productId, // Ensure exact match
-          );
-
-          return {
-            ...plan,
-            localizedPrice: matchingProduct?.localizedPrice || 'Coming Soon',
-            productId: matchingProduct?.productId || '',
-          };
-        });
-
-        if (isMounted) {
-          setAppStoreProducts(enrichedPlans);
-        }
-      } catch (err) {
-        console.warn('initIAP error:', err);
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    initIAP();
-
-    return () => {
-      isMounted = false;
-      RNIap.endConnection();
-    };
-  }, []);
-
   return (
     <SafeAreaViewComponent>
       <View
@@ -195,12 +141,23 @@ const HomeScreen = ({ navigation }) => {
             color={theme?.text}
             onPress={() => navigation.navigate('Search', { books: reduxBooks })}
           />
-          {/* <TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() =>
+              navigation.navigate('Settings', {
+                screen: 'EditProfile',
+              })
+            }
+          >
             <Image
-              source={require('../assets/user-dummy-img.jpg')}
+              source={
+                loggedInUser?.profilePicture
+                  ? { uri: loggedInUser?.profilePicture }
+                  : require('../assets/user-dummy-img.jpg')
+              }
               style={styles.profileImage}
             />
-          </TouchableOpacity> */}
+          </TouchableOpacity>
         </View>
       </View>
 

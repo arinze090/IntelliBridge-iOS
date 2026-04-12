@@ -9,16 +9,8 @@ const PaymentButtons = ({ onPress, paymentMethod, paymentMethodIcon }) => {
 
   return (
     <TouchableOpacity
-      style={{
-        padding: 15,
-        backgroundColor: theme?.text,
-        borderRadius: 8,
-        marginBottom: 10,
-        flexDirection: 'row',
-        alignContent: 'center',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
+      activeOpacity={0.9}
+      style={[styles.buttonContainer, { backgroundColor: theme?.text }]}
       onPress={onPress}
     >
       <Text
@@ -53,4 +45,14 @@ const PaymentButtons = ({ onPress, paymentMethod, paymentMethodIcon }) => {
 
 export default PaymentButtons;
 
-const styles = StyleSheet.create({});
+const styles = StyleSheet.create({
+  buttonContainer: {
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 10,
+    flexDirection: 'row',
+    alignContent: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

@@ -149,6 +149,24 @@ const EpubReader = ({ bookUrl, bookId, bookTitle = 'Book', props }) => {
             );
 
             break;
+          case 'BOOKMARK':
+            const newBookmark = data.location;
+
+            const existing =
+              JSON.parse(await AsyncStorage.getItem(`bookmarks_${bookId}`)) ||
+              [];
+
+            // prevent duplicates
+            if (!existing.includes(newBookmark)) {
+              const updated = [...existing, newBookmark];
+
+              await AsyncStorage.setItem(
+                `bookmarks_${bookId}`,
+                JSON.stringify(updated),
+              );
+            }
+
+            break;
           case 'LOG':
             console.log('[WebView]', data.message);
             break;
@@ -212,6 +230,18 @@ const EpubReader = ({ bookUrl, bookId, bookTitle = 'Book', props }) => {
     },
     [sendMessage],
   );
+
+  // bookmark feature
+  const handleAddBookmark = () => {
+    sendMessage({ type: 'GET_CURRENT_LOCATION' });
+  };
+
+  const goToBookmark = cfi => {
+    sendMessage({
+      type: 'GO_TO_LOCATION',
+      location: cfi,
+    });
+  };
 
   // ─────────────────────────────────────────────────────────────────────────
   // GESTURE HANDLER — lives on the RN View that overlays the WebView.
@@ -365,6 +395,9 @@ const EpubReader = ({ bookUrl, bookId, bookTitle = 'Book', props }) => {
             >
               {bookTitle}
             </Text>
+            <TouchableOpacity onPress={handleAddBookmark} style={styles.barBtn}>
+              <Ionicons name="bookmark-outline" size={20} />
+            </TouchableOpacity>
             <Text
               style={[styles.barProgress, { color: THEMES[theme].barMuted }]}
             >
@@ -491,6 +524,17 @@ function getReaderHtml() {
           case 'PREV_PAGE':     if(rendition) rendition.prev();       break;
           case 'SET_FONT_SIZE': setFontSize(data.size);               break;
           case 'SET_THEME':     applyTheme(data.theme);               break;
+          case 'GET_CURRENT_LOCATION':    
+            if (rendition) {
+              var loc = rendition.currentLocation();
+              if (loc && loc.start && loc.start.cfi) {
+                rn('BOOKMARK', {
+                  location: loc.start.cfi
+                });
+              }
+            }
+          break;
+          case 'GO_TO_LOCATION': if (rendition) rendition.display(data.location); break;
         }
       } catch(e) {}
     }

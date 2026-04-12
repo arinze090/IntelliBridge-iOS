@@ -13,6 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useDispatch, useSelector } from 'react-redux';
 import Toast from 'react-native-toast-message';
+import ImageView from 'react-native-image-viewing';
 
 import SafeAreaViewComponent from '../../components/common/SafeAreaViewComponent';
 import { useTheme } from '../../Context/ThemeContext';
@@ -76,6 +77,11 @@ const SettingsScreen = () => {
   const loggedInUser = state?.user?.user;
   console.log('loggedInUser', loggedInUser);
 
+  const transformedData = [loggedInUser?.profilePicture]?.map(item => ({
+    uri: item,
+  }));
+  const [visible, setIsVisible] = useState(false);
+
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -129,19 +135,17 @@ const SettingsScreen = () => {
 
     try {
       await axiosInstance({
-        url: '/api/deactivate-account',
-        method: 'DELETE',
+        url: '/api/auth/deactivate',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        data: { password: password },
+        data: { email: loggedInUser?.email, password: password },
       }).then(res => {
         setLoading(false);
         console.log('deactivateAccountConfirmation', res);
-        if (res?.status === 200) {
-          RNToast(Toast, 'Account Deactivated Successfully');
-          logout();
-        }
+        RNToast(Toast, 'Account Deactivated Successfully');
+        logout();
       });
     } catch (error) {
       console.error('deactivateAccountConfirmation  error:', error?.response);
@@ -160,9 +164,12 @@ const SettingsScreen = () => {
       >
         <View style={styles.profileSection}>
           <TouchableOpacity
-          // onPress={() => {
-          //   setIsVisible(true);
-          // }}
+            activeOpacity={0.9}
+            onPress={() => {
+              if (loggedInUser?.profilePicture) {
+                setIsVisible(true);
+              }
+            }}
           >
             {loading && loggedInUser?.profilePicture ? (
               <SkeletonPlaceholder
@@ -176,7 +183,7 @@ const SettingsScreen = () => {
               <Image
                 source={
                   loggedInUser?.profilePicture
-                    ? { uri: loggedInUser?.profile_pictures[0] }
+                    ? { uri: loggedInUser?.profilePicture }
                     : require('../../assets/user-dummy-img.jpg')
                 }
                 style={styles.image}
@@ -291,11 +298,18 @@ const SettingsScreen = () => {
           title={'Deactivate Account'}
           width={1.1}
           onPress={deactivateAccountConfirmation}
-          disabled={!password}
+          disabled={!password || loading}
           formError={formError}
           loading={loading}
         />
       </BottomSheet>
+
+      <ImageView
+        images={transformedData}
+        imageIndex={0}
+        visible={visible}
+        onRequestClose={() => setIsVisible(false)}
+      />
     </SafeAreaViewComponent>
   );
 };

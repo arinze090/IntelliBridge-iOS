@@ -40,7 +40,7 @@ const CustomDrawer = ({ props, iconColor }) => {
   const dispatch = useDispatch();
 
   const state = useSelector(state => state);
-  const user = state?.user?.user?.profile;
+  const user = state?.user?.user;
 
   const { toggleTheme, isDarkMode, theme } = useTheme();
 
@@ -75,7 +75,11 @@ const CustomDrawer = ({ props, iconColor }) => {
             >
               <View style={styles.person}>
                 <Image
-                  source={{ uri: user?.profile_pictures[0] }}
+                  source={{
+                    uri: user?.profilePicture
+                      ? user?.profilePicture
+                      : require('../../assets/user-dummy-img.jpg'),
+                  }}
                   style={styles.image}
                 />
                 {/* <Ionicons name="person-outline" size={16} color="black" /> */}

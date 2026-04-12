@@ -32,18 +32,19 @@ const AppNavigation = () => {
   }, []);
 
   return (
-    <Drawer.Navigator
+    <Stack.Navigator
+      screenOptions={{ headerShown: false }}
       // ref={navigationRef}
-      drawerContent={props => <CustomDrawer {...props} />}
-      screenOptions={{
-        drawerLabelStyle: {
-          marginLeft: -15,
-        },
-        drawerActiveBackgroundColor: COLORS.black,
-        drawerActiveTintColor: 'white',
-        drawerInactiveTintColor: COLORS.btnBorderColor,
-      }}
-      headerMode="none"
+      // drawerContent={props => <CustomDrawer {...props} />}
+      // screenOptions={{
+      //   drawerLabelStyle: {
+      //     marginLeft: -15,
+      //   },
+      //   drawerActiveBackgroundColor: COLORS.black,
+      //   drawerActiveTintColor: 'white',
+      //   drawerInactiveTintColor: COLORS.btnBorderColor,
+      // }}
+      // headerMode="none"
     >
       {isLoading ? (
         <Stack.Screen
@@ -65,7 +66,7 @@ const AppNavigation = () => {
           }}
         />
       )}
-    </Drawer.Navigator>
+    </Stack.Navigator>
   );
 };
 

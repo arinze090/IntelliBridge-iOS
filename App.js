@@ -5,6 +5,7 @@ import { Provider as ReduxStoreProvider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import store, { persistor } from './src/redux/store';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { withIAPContext } from 'react-native-iap';
 
 import AppNavigation from './src/navigation/AppNavigator';
 import MainNavigator from './src/navigation/MainNavigator';
