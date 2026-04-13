@@ -1,6 +1,7 @@
 import {
   Alert,
   Image,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -33,6 +34,8 @@ import axiosInstance from '../../utils/api-client';
 import CategoryCard from '../../components/cards/CategoryCard';
 import BottomSheet from '../../components/bottomSheet/BottomSheet';
 import PaymentButtons from '../../components/form/PaymentButtons';
+
+const isIos = Platform.OS === 'ios';
 
 const BookDetails = ({ navigation, route }) => {
   const item = route?.params;
@@ -366,7 +369,7 @@ const BookDetails = ({ navigation, route }) => {
       <BottomSheet
         bottomSheetRef={bottomSheetRef}
         bottomsheetTitle={'Choose Payment Method'}
-        height={3}
+        height={isIos ? 3 : 4}
       >
         <View style={{ padding: 20 }}>
           <TouchableOpacity
@@ -391,11 +394,13 @@ const BookDetails = ({ navigation, route }) => {
           </TouchableOpacity>
 
           {/* Add more payment options here */}
-          <PaymentButtons
-            onPress={payWithApplePay}
-            paymentMethod="Pay"
-            paymentMethodIcon="logo-apple"
-          />
+          {isIos && (
+            <PaymentButtons
+              onPress={payWithApplePay}
+              paymentMethod="Pay"
+              paymentMethodIcon="logo-apple"
+            />
+          )}
         </View>
       </BottomSheet>
     </SafeAreaViewComponent>

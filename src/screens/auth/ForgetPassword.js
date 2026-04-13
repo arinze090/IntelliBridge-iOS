@@ -45,7 +45,7 @@ const ForgetPassword = ({ navigation, route }) => {
           if (res?.data) {
             console.log('sendOTPToEmail data', res?.data);
             RNToast(Toast, 'A verification code has been sent to your email');
-            navigation.navigate('ResetPassword', {
+            navigation.navigate('EmailVerification', {
               email: email,
             });
             dispatch(setUserDestination('ResetPassword'));

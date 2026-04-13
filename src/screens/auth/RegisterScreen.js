@@ -24,6 +24,7 @@ import { COLORS } from '../../themes/themes';
 import { RNToast } from '../../Library/Common';
 import axiosInstance from '../../utils/api-client';
 import ScrollViewSpace from '../../components/common/ScrollViewSpace';
+import { checkPassword } from '../../Library/Validation';
 
 const RegisterScreen = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -75,71 +76,83 @@ const RegisterScreen = ({ navigation }) => {
       password: password,
     };
 
-    setLoading(true);
     console.log('registerData', registerData);
 
-    try {
-      await axiosInstance({
-        url: '/api/auth/signup/',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        data: registerData,
-      }).then(res => {
-        setLoading(false);
-        console.log('registerResponse', res);
-        if (res?.status === 201 && res?.data) {
-          RNToast(Toast, 'Registration Successful');
-          navigation.navigate('EmailVerification', { email: email });
-        } else {
-          RNToast(Toast, 'Registration Failed. Please check your credentials.');
-          setFormError('Registration Failed. Please check your credentials.');
-        }
-      });
-    } catch (error) {
-      console.error('Register check error:', error?.response);
+    if (checkPassword(password)?.isValid === false) {
+      setFormError(checkPassword(password)?.cause);
       setLoading(false);
+      return;
+    } else {
+      setLoading(true);
 
-      if (error?.response?.data?.message?.includes('already exists')) {
-        Alert.alert(
-          'Signup Failed',
-          'The username or email you chose already exists in our platform, try using another username or email',
-        );
-        setFormError(
-          'The username or email you chose already exists in our platform, try using another username or email',
-        );
-      } else if (
-        error?.response?.data?.message?.includes('Account already exists')
-      ) {
-        Alert.alert(
-          'Signup Failed',
-          'You already have an account with us, please login to enjoy our services',
-        );
-        setFormError(
-          'You already have an account with us, please login to enjoy our services',
-        );
-      } else if (
-        error?.response?.data?.message?.includes('Username already exists')
-      ) {
-        Alert.alert(
-          'Signup Failed',
-          'The username you chose already exists in our platform, try using another username',
-        );
-        setFormError(
-          'The username you chose already exists in our platform, try using another username',
-        );
-      } else if (error?.response?.data?.message?.includes('Password must be')) {
-        Alert.alert(
-          'Signup Failed',
-          'Password must be at least 8 characters long',
-        );
-        setFormError('Password must be at least 8 characters long');
-      } else {
-        Alert.alert(
-          'Signup Failed',
-          'Something went wrong, please try again later',
-        );
+      try {
+        await axiosInstance({
+          url: '/api/auth/signup/',
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          data: registerData,
+        }).then(res => {
+          setLoading(false);
+          console.log('registerResponse', res);
+          if (res?.status === 201 && res?.data) {
+            RNToast(Toast, 'Registration Successful');
+            navigation.navigate('EmailVerification', { email: email });
+          } else {
+            RNToast(
+              Toast,
+              'Registration Failed. Please check your credentials.',
+            );
+            setFormError('Registration Failed. Please check your credentials.');
+          }
+        });
+      } catch (error) {
+        console.error('Register check error:', error?.response);
+        setLoading(false);
+
+        if (error?.response?.data?.message?.includes('already exists')) {
+          Alert.alert(
+            'Signup Failed',
+            'The username or email you chose already exists in our platform, try using another username or email',
+          );
+          setFormError(
+            'The username or email you chose already exists in our platform, try using another username or email',
+          );
+        } else if (
+          error?.response?.data?.message?.includes('Account already exists')
+        ) {
+          Alert.alert(
+            'Signup Failed',
+            'You already have an account with us, please login to enjoy our services',
+          );
+          setFormError(
+            'You already have an account with us, please login to enjoy our services',
+          );
+        } else if (
+          error?.response?.data?.message?.includes('Username already exists')
+        ) {
+          Alert.alert(
+            'Signup Failed',
+            'The username you chose already exists in our platform, try using another username',
+          );
+          setFormError(
+            'The username you chose already exists in our platform, try using another username',
+          );
+        } else if (
+          error?.response?.data?.message?.includes('Password must be')
+        ) {
+          Alert.alert(
+            'Signup Failed',
+            'Password must be at least 8 characters long',
+          );
+          setFormError('Password must be at least 8 characters long');
+        } else {
+          Alert.alert(
+            'Signup Failed',
+            'Something went wrong, please try again later',
+          );
+        }
       }
     }
   };

@@ -34,12 +34,10 @@ export function checkPassword(password) {
   }
 
   // Check for at least 1 special character
-  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-    const specialCharacters = '!@#$%^&*(),.?":{}|<>';
-    const errorMessage = `Your password must contain at least one special character. Special characters include: ${specialCharacters}`;
+  if (!/[^a-zA-Z0-9]/.test(password)) {
     return {
       isValid: false,
-      cause: errorMessage,
+      cause: 'Password must contain at least one special character.',
     };
   }
 

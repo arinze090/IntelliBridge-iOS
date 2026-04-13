@@ -266,7 +266,7 @@ const SettingsScreen = () => {
       <BottomSheet
         height={2.5}
         bottomSheetRef={bottomSheetRef}
-        bottomsheetTitle={'Account Deactivated'}
+        bottomsheetTitle={'Account Deactivation'}
       >
         <Text style={[styles.deactivateAccountText, { color: theme?.text }]}>
           Please provide your password for verification.
