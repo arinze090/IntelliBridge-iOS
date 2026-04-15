@@ -291,6 +291,7 @@ const MainScreen = () => {
             'Login',
             'Register',
             'LibraryBookDetails',
+            'EditProfile',
           ];
           if (routeWithNoTarBar.includes(routeName)) {
             return { display: 'none' };

@@ -25,9 +25,11 @@ export default function verifyTokenWithoutApi(WrappedComponent) {
     const navigation = useNavigation();
     const dispatch = useDispatch();
 
+    const FIVE_DAYS = 5 * 24 * 60 * 60 * 1000;
+
     const checkLogin = () => {
       setTimeout(() => {
-        if (nowDate - lastTimeUserLoggedIn >= 60 * 60 * 1000) {
+        if (nowDate - lastTimeUserLoggedIn >= FIVE_DAYS) {
           dispatch(signOut());
 
           RNToast(Toast, 'Session Expired, Please Login');

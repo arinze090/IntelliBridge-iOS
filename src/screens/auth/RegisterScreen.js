@@ -21,7 +21,7 @@ import FixedBottomContainer from '../../components/common/FixedBottomContainer';
 import KeyboardAvoidingComponent from '../../components/form/KeyboardAvoidingComponent';
 import { setUserDestination } from '../../redux/features/user/userSlice';
 import { COLORS } from '../../themes/themes';
-import { RNToast } from '../../Library/Common';
+import { normalizeEmail, RNToast } from '../../Library/Common';
 import axiosInstance from '../../utils/api-client';
 import ScrollViewSpace from '../../components/common/ScrollViewSpace';
 import { checkPassword } from '../../Library/Validation';
@@ -70,7 +70,7 @@ const RegisterScreen = ({ navigation }) => {
 
   const register = async () => {
     const registerData = {
-      email: email,
+      email: normalizeEmail(email),
       fullname: fullName,
       username: username,
       password: password,
@@ -98,7 +98,7 @@ const RegisterScreen = ({ navigation }) => {
           console.log('registerResponse', res);
           if (res?.status === 201 && res?.data) {
             RNToast(Toast, 'Registration Successful');
-            navigation.navigate('EmailVerification', { email: email });
+            navigation.navigate('EmailVerification', { email: normalizeEmail(email) });
           } else {
             RNToast(
               Toast,

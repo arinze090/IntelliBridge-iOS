@@ -12,10 +12,11 @@ import KeyboardAvoidingComponent from '../../components/form/KeyboardAvoidingCom
 import {
   getUser,
   saveAccessToken,
+  saveLoginTime,
   setUserDestination,
 } from '../../redux/features/user/userSlice';
 import { COLORS } from '../../themes/themes';
-import { RNToast } from '../../Library/Common';
+import { normalizeEmail, RNToast } from '../../Library/Common';
 import Toast from 'react-native-toast-message';
 import axiosInstance from '../../utils/api-client';
 
@@ -48,7 +49,7 @@ const LoginScreen = ({ navigation }) => {
 
   const login = async () => {
     const loginData = {
-      email: email,
+      email: normalizeEmail(email),
       password: password,
     };
 
@@ -69,6 +70,7 @@ const LoginScreen = ({ navigation }) => {
           RNToast(Toast, 'Login Successful');
           dispatch(getUser(res?.data));
           dispatch(saveAccessToken(res?.data?.token));
+          dispatch(saveLoginTime(Date.now()));
         } else {
           RNToast(Toast, 'Login Failed. Please check your credentials.');
           setFormError('Login Failed. Please check your credentials.');

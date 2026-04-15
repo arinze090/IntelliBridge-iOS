@@ -13,6 +13,10 @@ export const obscureEmail = emilString => {
   return name.substring(0, 3).concat('****@').concat(domain);
 };
 
+export const normalizeEmail = email => {
+  return email?.trim().toLowerCase();
+};
+
 export const generateProductId = title => {
   return `com.intellibridge.book.${title
     ?.toLowerCase()

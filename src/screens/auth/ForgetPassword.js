@@ -15,7 +15,7 @@ import FixedBottomContainer from '../../components/common/FixedBottomContainer';
 
 import { useTheme } from '../../Context/ThemeContext';
 import axiosInstance from '../../utils/api-client';
-import { RNToast } from '../../Library/Common';
+import { normalizeEmail, RNToast } from '../../Library/Common';
 import { setUserDestination } from '../../redux/features/user/userSlice';
 
 const ForgetPassword = ({ navigation, route }) => {
@@ -34,7 +34,7 @@ const ForgetPassword = ({ navigation, route }) => {
       await axiosInstance({
         url: '/api/auth/forgotpassword',
         method: 'POST',
-        data: { email: email },
+        data: { email: normalizeEmail(email) },
         headers: {
           'Content-Type': 'application/json',
         },
@@ -46,7 +46,7 @@ const ForgetPassword = ({ navigation, route }) => {
             console.log('sendOTPToEmail data', res?.data);
             RNToast(Toast, 'A verification code has been sent to your email');
             navigation.navigate('EmailVerification', {
-              email: email,
+              email: normalizeEmail(email),
             });
             dispatch(setUserDestination('ResetPassword'));
           }
@@ -56,13 +56,9 @@ const ForgetPassword = ({ navigation, route }) => {
           setLoading(false);
           if (err?.response?.data?.message.includes('Too many requests')) {
             setFormError('Too many attempts. Please try again later.');
-          } else if (
-            err?.response?.data?.message.includes(
-              'No user found with this email address',
-            )
-          ) {
+          } else if (err?.response?.data?.message.includes('no user')) {
             setFormError(
-              'The email address is invalid. Please try again later with a regustered email.',
+              'The email address is invalid. Please try again later with a registered email.',
             );
           }
         });

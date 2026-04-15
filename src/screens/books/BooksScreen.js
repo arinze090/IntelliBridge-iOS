@@ -7,7 +7,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
@@ -16,6 +17,7 @@ import ReadingBookCard from '../../components/cards/ReadingBookCard';
 import SafeAreaViewComponent from '../../components/common/SafeAreaViewComponent';
 import axiosInstance from '../../utils/api-client';
 import { saveLibraryBooks } from '../../redux/features/books/booksSlice';
+import verifyTokenWithoutApi from '../../components/hoc/verifyToken';
 
 const BooksScreen = ({ navigation }) => {
   const { theme } = useTheme();
@@ -104,16 +106,22 @@ const BooksScreen = ({ navigation }) => {
     fetchLibraryBooks();
   };
 
-  useEffect(() => {
-    let isMounted = true;
-    if (isMounted) {
-      fetchLibraryBooks();
-    }
+  // useEffect(() => {
+  //   let isMounted = true;
+  //   if (isMounted) {
+  //     fetchLibraryBooks();
+  //   }
 
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  //   return () => {
+  //     isMounted = false;
+  //   };
+  // }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchLibraryBooks();
+    }, []),
+  );
 
   return (
     <SafeAreaViewComponent>
@@ -173,7 +181,7 @@ const BooksScreen = ({ navigation }) => {
   );
 };
 
-export default BooksScreen;
+export default verifyTokenWithoutApi(BooksScreen);
 
 const styles = StyleSheet.create({
   profileImage: {

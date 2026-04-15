@@ -84,6 +84,7 @@ const styles = StyleSheet.create({
     width: windowWidth / 2.8,
     height: windowHeight / 5.5,
     borderRadius: 5,
+    resizeMode: 'contain',
   },
   bookInfoContainer: {
     // backgroundColor: 'green',

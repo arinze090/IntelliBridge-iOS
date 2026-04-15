@@ -12,7 +12,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { usePaystack } from 'react-native-paystack-webview';
 import { useDispatch, useSelector } from 'react-redux';
 import Toast from 'react-native-toast-message';
-import { useIAP, ErrorCode } from 'react-native-iap';
+import { useIAP, ErrorCode, getAvailablePurchases } from 'react-native-iap';
 
 import SafeAreaViewComponent from '../../components/common/SafeAreaViewComponent';
 import HeaderTitle from '../../components/common/HeaderTitle';
@@ -39,7 +39,7 @@ const isIos = Platform.OS === 'ios';
 
 const BookDetails = ({ navigation, route }) => {
   const item = route?.params;
-  console.log('hhfhf', item);
+  // console.log('hhfhf', item);
 
   const { theme } = useTheme();
   const bottomSheetRef = useRef();
@@ -107,7 +107,7 @@ const BookDetails = ({ navigation, route }) => {
     } catch (error) {
       console.error('bookCheckout error:', error?.response);
       setLoading(false);
-      RNToast(Toast, 'An error occured purchase has been verified ✅');
+      // RNToast(Toast, 'An error occured purchase has been verified ✅');
       Alert.alert(
         'Payment Failed',
         `Your payment of ${formatToNaira(item?.price)} for ${
@@ -163,7 +163,7 @@ const BookDetails = ({ navigation, route }) => {
   const payWithApplePay = async () => {
     // Implement Apple Pay logic here
     console.log('Paying with Apple Pay for:', item?.bookTitle);
-
+    setLoading(true);
     requestPurchase({
       request: { apple: { sku: appleProductData?.[0]?.id } },
       type: 'in-app',
@@ -185,9 +185,29 @@ const BookDetails = ({ navigation, route }) => {
     },
     onPurchaseError: error => {
       console.error('Purchase failed:', error);
+      setLoading(false);
+
       // Handle purchase error
       if (error?.code === ErrorCode?.UserCancelled) {
         console.log('User cancelled the purchase');
+      } else if (error?.code == 'duplicate-purchase') {
+        const checkPurchases = async () => {
+          const purchases = await getAvailablePurchases();
+          console.log('Available purchases:', purchases);
+
+          const alreadyOwned = purchases?.find(
+            p => p.productId === appleProductId,
+          );
+
+          if (alreadyOwned) {
+            console.log('Already owned:', alreadyOwned);
+
+            // sync with backend
+            bookCheckout('applepay', alreadyOwned?.transactionId, alreadyOwned);
+          }
+        };
+
+        checkPurchases();
       } else {
         Alert.alert(
           'Purchase Failed',
@@ -206,10 +226,11 @@ const BookDetails = ({ navigation, route }) => {
       if (result?.isValid) {
         console.log('Receipt is valid', result);
         // submit to the backend for verification and fulfillment (unlocking the book)
-        bookCheckout('apple_pay', purchase?.transactionId, purchase);
+        bookCheckout('applepay', purchase?.transactionId, purchase);
       }
     } catch (error) {
       console.error('Validation failed:', error);
+      setLoading(false);
       Alert.alert(
         'Purchase Verification Failed',
         'An error occurred while verifying the purchase. Please try again.',
@@ -230,6 +251,30 @@ const BookDetails = ({ navigation, route }) => {
     console.log('Products updated:', products);
     setAppleProductData(products);
   }, [products]);
+
+  // useEffect(() => {
+  //   if (connected) {
+  //     console.log('Connected to IAP');
+
+  //     const checkPurchases = async () => {
+  //       const purchases = await getAvailablePurchases();
+  //       console.log('Available purchases:', purchases);
+
+  //       const alreadyOwned = purchases?.find(
+  //         p => p.productId === appleProductId,
+  //       );
+
+  //       if (alreadyOwned) {
+  //         console.log('Already owned:', alreadyOwned);
+
+  //         // sync with backend
+  //         bookCheckout('applepay', alreadyOwned.transactionId, alreadyOwned);
+  //       }
+  //     };
+
+  //     checkPurchases();
+  //   }
+  // }, [connected]);
 
   return (
     <SafeAreaViewComponent>
@@ -277,7 +322,7 @@ const BookDetails = ({ navigation, route }) => {
           </Text>
         </Text>
 
-        <View style={{ flexDirection: 'row' }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <CategoryCard
             iconName={'layers-outline'}
             props={item?.category?.name}
@@ -286,7 +331,13 @@ const BookDetails = ({ navigation, route }) => {
             iconName={'book-outline'}
             props={item?.bookFormat == 'epub' && 'E-book'}
           />
-        </View>
+          {item?.isbn && (
+            <CategoryCard
+              iconName={'barcode-outline'}
+              props={item?.isbn && `ISBN: ${item?.isbn}`}
+            />
+          )}
+        </ScrollView>
 
         {/* Book Information */}
         <Text style={[styles.aboutAuthor, { color: theme?.text }]}>
@@ -358,10 +409,10 @@ const BookDetails = ({ navigation, route }) => {
           <FormButton
             title={'Buy Now' + ` ${formatToNaira(item?.price)}`}
             loading={loading}
-            onPress={() => {
-              bottomSheetRef.current.open();
-            }}
-            // onPress={buyBookNow}
+            // onPress={() => {
+            //   bottomSheetRef.current.open();
+            // }}
+            onPress={payWithApplePay}
           />
         )}
       </View>

@@ -14,6 +14,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useDispatch, useSelector } from 'react-redux';
 import Toast from 'react-native-toast-message';
 import ImageView from 'react-native-image-viewing';
+import SkeletonPlaceholder from 'react-native-skeleton-placeholder';
 
 import SafeAreaViewComponent from '../../components/common/SafeAreaViewComponent';
 import { useTheme } from '../../Context/ThemeContext';
@@ -26,7 +27,7 @@ import FormButton from '../../components/form/FormButton';
 import axiosInstance from '../../utils/api-client';
 import { RNToast } from '../../Library/Common';
 import { COLORS } from '../../themes/themes';
-import SkeletonPlaceholder from 'react-native-skeleton-placeholder';
+import verifyTokenWithoutApi from '../../components/hoc/verifyToken';
 
 const settings = [
   {
@@ -314,7 +315,7 @@ const SettingsScreen = () => {
   );
 };
 
-export default SettingsScreen;
+export default verifyTokenWithoutApi(SettingsScreen);
 
 const styles = StyleSheet.create({
   settings: {

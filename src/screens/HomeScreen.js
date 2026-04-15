@@ -18,6 +18,7 @@ import BookCardWithPriceTag from '../components/cards/BookCardWithPriceTag';
 import axiosInstance from '../utils/api-client';
 import { getGreeting } from '../Library/Common';
 import { getBooks } from '../redux/features/books/booksSlice';
+import verifyTokenWithoutApi from '../components/hoc/verifyToken';
 
 const HomeScreen = ({ navigation }) => {
   const { theme } = useTheme();
@@ -203,7 +204,7 @@ const HomeScreen = ({ navigation }) => {
   );
 };
 
-export default HomeScreen;
+export default verifyTokenWithoutApi(HomeScreen);
 
 const styles = StyleSheet.create({
   profileImage: {

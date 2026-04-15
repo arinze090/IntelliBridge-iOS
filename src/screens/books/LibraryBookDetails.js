@@ -1,18 +1,13 @@
 import {
-  Alert,
   Image,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import React, { useRef, useState } from 'react';
-import { usePaystack } from 'react-native-paystack-webview';
+import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import Toast from 'react-native-toast-message';
-import * as RNIap from 'react-native-iap';
 
 import SafeAreaViewComponent from '../../components/common/SafeAreaViewComponent';
 import HeaderTitle from '../../components/common/HeaderTitle';
@@ -20,16 +15,12 @@ import { useTheme } from '../../Context/ThemeContext';
 import { windowWidth } from '../../utils/Dimensions';
 import { COLORS } from '../../themes/themes';
 import FormButton from '../../components/form/FormButton';
-import { formatToNaira, RNToast } from '../../Library/Common';
 import ScrollViewSpace from '../../components/common/ScrollViewSpace';
 import {
   removeBookFromBookmarks,
   saveBookmarkedBooks,
 } from '../../redux/features/books/booksSlice';
-import axiosInstance from '../../utils/api-client';
 import CategoryCard from '../../components/cards/CategoryCard';
-import BottomSheet from '../../components/bottomSheet/BottomSheet';
-import PaymentButtons from '../../components/form/PaymentButtons';
 import ProgressBar from '../../components/common/ProgressBar';
 
 const LibraryBookDetails = ({ navigation, route }) => {
@@ -37,7 +28,6 @@ const LibraryBookDetails = ({ navigation, route }) => {
   console.log('hhfhf', item);
 
   const { theme } = useTheme();
-  const bottomSheetRef = useRef();
 
   const dispatch = useDispatch();
   const state = useSelector(state => state);
@@ -47,95 +37,11 @@ const LibraryBookDetails = ({ navigation, route }) => {
     book => book?._id === item?._id,
   );
 
-  // Paystack Integration
-  const { popup } = usePaystack();
-
   const [expanded, setExpanded] = useState(false);
   const [showToggle, setShowToggle] = useState(false);
   const [authorExpanded, setAuthorExpanded] = useState(false);
   const [showAuthorToggle, setShowAuthorToggle] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  const bookCheckout = async (paymentMethod, paymentReference, paymentData) => {
-    const bookOrder = {
-      paymentMethod: paymentMethod,
-      transactionReference: paymentReference,
-      items: [item?._id],
-      paymentData: paymentData,
-    };
-
-    console.log('bookOrder', bookOrder);
-
-    setLoading(true);
-
-    try {
-      await axiosInstance({
-        url: '/api/orders/checkout',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        data: bookOrder,
-      }).then(res => {
-        setLoading(false);
-        console.log('bookCheckout res', res);
-        RNToast(Toast, 'Your purchase has been verified ✅');
-
-        // save to redux the book purchased
-        // dispatch(saveBoughtBooks(item));
-
-        navigation.navigate('Home', { screen: 'HomeScreen' });
-
-        // later on navigate to the Bookscreen to fetch and show the list of books the user bought and reading,
-        // then navigate to the BookReader with the selected book details
-        navigation.navigate('Books', {
-          screen: 'BooksScreen',
-          params: { item },
-        });
-      });
-    } catch (error) {
-      console.error('bookCheckout error:', error?.response);
-      setLoading(false);
-      RNToast(Toast, 'An error occured purchase has been verified ✅');
-      Alert.alert(
-        'Payment Failed',
-        `Your payment of ${formatToNaira(item?.price)} for ${
-          item?.bookTitle
-        } failed. If your account has been debited, please contact our support helpline to get it resolved`,
-      );
-    }
-  };
-
-  const buyBookNow = () => {
-    // Close bottom sheet first so the Paystack popup can appear on top
-    bottomSheetRef.current?.close();
-
-    // Add a small delay to ensure bottom sheet is closed before showing popup
-    setTimeout(() => {
-      console.log('Book purchased:', item?.bookTitle);
-
-      popup?.checkout({
-        email: loggedInUser?.email,
-        amount: item?.price,
-        channels: ['bank_transfer'],
-
-        onSuccess: res => {
-          console.log('Success:', res);
-          const payStackPaymentReference = res?.reference;
-          const paystackPaymentData = res;
-
-          bookCheckout(
-            'paystack',
-            payStackPaymentReference,
-            paystackPaymentData,
-          );
-        },
-        onCancel: () => console.log('User cancelled'),
-        onLoad: res => console.log('WebView Loaded:', res),
-        onError: err => console.log('WebView Error:', err),
-      });
-    }, 300);
-  };
 
   const bookmarkBook = () => {
     // Implement your book bookmarking logic here
@@ -196,16 +102,22 @@ const LibraryBookDetails = ({ navigation, route }) => {
           </Text>
         </Text>
 
-        <View style={{ flexDirection: 'row' }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <CategoryCard
             iconName={'layers-outline'}
-            props={item?.bookInfo?.category?.name}
+            props={item?.category?.name}
           />
           <CategoryCard
             iconName={'book-outline'}
-            props={item?.bookInfo?.bookFormat == 'epub' && 'E-book'}
+            props={item?.bookFormat == 'epub' && 'E-book'}
           />
-        </View>
+          {item?.isbn && (
+            <CategoryCard
+              iconName={'barcode-outline'}
+              props={item?.isbn && `ISBN: ${item?.isbn}`}
+            />
+          )}
+        </ScrollView>
 
         {/* Book Information */}
         <Text style={[styles.aboutAuthor, { color: theme?.text }]}>
@@ -281,7 +193,7 @@ const LibraryBookDetails = ({ navigation, route }) => {
 
       <View style={styles.btnSection}>
         <FormButton
-          title={item?.isReading ? 'Continue Reading' : 'Read Now'}
+          title={item?.isReading ? 'Continue Reading' : 'Start Reading'}
           loading={loading}
           onPress={() => navigation.navigate('BookReader', item?.bookInfo)}
         />
