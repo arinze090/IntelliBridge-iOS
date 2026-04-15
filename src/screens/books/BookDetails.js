@@ -412,7 +412,7 @@ const BookDetails = ({ navigation, route }) => {
             // onPress={() => {
             //   bottomSheetRef.current.open();
             // }}
-            onPress={payWithApplePay}
+            onPress={isIos ? payWithApplePay : buyBookNow}
           />
         )}
       </View>
