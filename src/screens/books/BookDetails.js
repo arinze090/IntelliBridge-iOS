@@ -128,7 +128,6 @@ const BookDetails = ({ navigation, route }) => {
       popup?.checkout({
         email: loggedInUser?.email,
         amount: item?.price,
-        channels: ['bank_transfer'],
 
         onSuccess: res => {
           console.log('Success:', res);

@@ -10,7 +10,7 @@ import App from './App';
 import { name as appName } from './app.json';
 import Toast from 'react-native-toast-message';
 import { PaystackProvider } from 'react-native-paystack-webview';
-import { PAYSTACK_LIVE_SECRET_KEY, PAYSTACK_LIVE_PUBLIC_KEY, PAYSTACK_TEST_PUBLIC_KEY } from '@env';
+import { PAYSTACK_LIVE_PUBLIC_KEY } from '@env';
 
 import { windowHeight, windowWidth } from './src/utils/Dimensions';
 import { COLORS } from './src/themes/themes';
@@ -38,7 +38,18 @@ const RootApp = ({ isHeadless }) => {
   };
 
   return (
-    <PaystackProvider publicKey={PAYSTACK_LIVE_PUBLIC_KEY}>
+    <PaystackProvider
+      publicKey={PAYSTACK_LIVE_PUBLIC_KEY}
+      defaultChannels={[
+        'card',
+        'bank',
+        'ussd',
+        'qr',
+        'mobile_money',
+        'bank_transfer',
+        'apple_pay',
+      ]}
+    >
       <App />
       <Toast config={toastConfig} />
     </PaystackProvider>
