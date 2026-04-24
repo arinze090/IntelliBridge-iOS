@@ -1,6 +1,7 @@
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
+import Toast from 'react-native-toast-message';
 
 import { windowWidth } from '../../utils/Dimensions';
 import SafeAreaViewComponent from '../../components/common/SafeAreaViewComponent';
@@ -17,8 +18,8 @@ import {
 } from '../../redux/features/user/userSlice';
 import { COLORS } from '../../themes/themes';
 import { normalizeEmail, RNToast } from '../../Library/Common';
-import Toast from 'react-native-toast-message';
 import axiosInstance from '../../utils/api-client';
+import { emailValidator } from '../../Library/Validation';
 
 const LoginScreen = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -141,11 +142,11 @@ const LoginScreen = ({ navigation }) => {
             setEmail(txt);
             setFormError('');
             setEmailError('');
-            // if (!emailValidator(txt)) {
-            //   setEmailError("Please enter a valid email");
-            // } else {
-            //   setEmailError("");
-            // }
+            if (!emailValidator(txt)) {
+              setEmailError("Please enter a valid email");
+            } else {
+              setEmailError("");
+            }
           }}
           // placeholderTextColor="#ccc"
           errorMessage={emailError}

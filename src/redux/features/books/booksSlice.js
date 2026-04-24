@@ -9,6 +9,7 @@ const initialState = {
   wishlistsBooks: [],
   boughtBooks: [],
   librarybooks: [],
+  bookmarkBookPages: {},
 };
 
 const booksSlice = createSlice({
@@ -67,6 +68,51 @@ const booksSlice = createSlice({
     saveLibraryBooks: (state, action) => {
       state.librarybooks = action.payload;
     },
+    addBookmarkBookPage: (state, action) => {
+      const { bookId, location, text, page, bookInfo } = action.payload;
+
+      if (!state.bookmarkBookPages[bookId]) {
+        state.bookmarkBookPages[bookId] = {
+          bookInfo,
+          bookmarks: [
+            {
+              location,
+              page,
+              text: text || '',
+              createdAt: Date.now(),
+            },
+          ],
+        };
+        return;
+      }
+
+      const book = state.bookmarkBookPages[bookId];
+
+      // safety guard (important for old data)
+      if (!Array.isArray(book.bookmarks)) {
+        book.bookmarks = [];
+      }
+
+      const exists = book.bookmarks.some(b => b?.location === location);
+
+      if (!exists) {
+        book.bookmarks.push({
+          location,
+          page,
+          text: text || '',
+          createdAt: Date.now(),
+        });
+      }
+    },
+    removeBookmarkBookaPage: (state, action) => {
+      const { bookId, location } = action.payload;
+
+      const book = state.bookmarkBookPages[bookId];
+
+      if (!book || !Array.isArray(book.bookmarks)) return;
+
+      book.bookmarks = book.bookmarks.filter(b => b?.location !== location);
+    },
   },
 });
 
@@ -83,5 +129,7 @@ export const {
   saveBoughtBooks,
   clearBoughtBooks,
   saveLibraryBooks,
+  addBookmarkBookPage,
+  removeBookmarkBookaPage,
 } = booksSlice.actions;
 export default booksSlice.reducer;

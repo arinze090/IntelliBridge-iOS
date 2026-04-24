@@ -24,7 +24,7 @@ import { COLORS } from '../../themes/themes';
 import { normalizeEmail, RNToast } from '../../Library/Common';
 import axiosInstance from '../../utils/api-client';
 import ScrollViewSpace from '../../components/common/ScrollViewSpace';
-import { checkPassword } from '../../Library/Validation';
+import { checkPassword, emailValidator } from '../../Library/Validation';
 
 const RegisterScreen = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -98,7 +98,9 @@ const RegisterScreen = ({ navigation }) => {
           console.log('registerResponse', res);
           if (res?.status === 201 && res?.data) {
             RNToast(Toast, 'Registration Successful');
-            navigation.navigate('EmailVerification', { email: normalizeEmail(email) });
+            navigation.navigate('EmailVerification', {
+              email: normalizeEmail(email),
+            });
           } else {
             RNToast(
               Toast,
@@ -239,11 +241,11 @@ const RegisterScreen = ({ navigation }) => {
               setEmail(txt);
               setFormError('');
               setEmailError('');
-              // if (!emailValidator(txt)) {
-              //   setEmailError("Please enter a valid email");
-              // } else {
-              //   setEmailError("");
-              // }
+              if (!emailValidator(txt)) {
+                setEmailError('Please enter a valid email');
+              } else {
+                setEmailError('');
+              }
             }}
             // placeholderTextColor="#ccc"
             errorMessage={emailError}
@@ -312,7 +314,13 @@ const RegisterScreen = ({ navigation }) => {
             title={'Sign Up'}
             width={1.1}
             onPress={register}
-            disabled={!email || !password || !fullName || !username || loading}
+            disabled={
+              !emailValidator(email) ||
+              !password ||
+              !fullName ||
+              !username ||
+              loading
+            }
             formError={formError}
             loading={loading}
           />

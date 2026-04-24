@@ -3,6 +3,7 @@ import { View, Text } from 'react-native';
 
 import PdfReader from '../../components/common/PdfReader';
 import EpubReader from '../../components/common/EpubReader';
+import EpubReader2 from '../../components/common/EpubReader2';
 
 const BookReader = ({ route }) => {
   const bookItem = route?.params;
@@ -11,7 +12,7 @@ const BookReader = ({ route }) => {
   const displayBook = () => {
     if (bookItem?.bookFormat === 'epub') {
       return (
-        <EpubReader
+        <EpubReader2
           bookUrl={bookItem?.bookUrl}
           bookId={bookItem?._id}
           bookTitle={bookItem?.bookTitle}

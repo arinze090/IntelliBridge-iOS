@@ -18,37 +18,13 @@ const OnboardingScreen = ({ navigation }) => {
     setShowRealApp(true);
   };
 
-  const slides = [
-    {
-      key: 's1',
-      title: 'Let’s Find You The Right Professional For The Job',
-      description:
-        'Lorem ipsum dolor sit amet consectetur. Varius consectetur nullam vulputate turpis ac viverra tincidunt ut facilisis.',
-      image: require('../../assets/1.jpg'),
-    },
-    {
-      key: 's2',
-      title: 'Find The Nearest Handyman Closest To You',
-      description:
-        'Lorem ipsum dolor sit amet consectetur. Varius consectetur nullam vulputate turpis ac viverra tincidunt ut facilisis.',
-      image: require('../../assets/1.jpg'),
-    },
-    {
-      key: 's3',
-      title: 'Start A Conversation & Book A Service',
-      description:
-        'Lorem ipsum dolor sit amet consectetur. Varius consectetur nullam vulputate turpis ac viverra tincidunt ut facilisis.',
-      image: require('../../assets/1.jpg'),
-    },
-  ];
-
   const RenderItem = ({ item }) => {
     return (
       <View style={styles.renderContainer}>
         <View style={{ alignItems: 'center', marginBottom: 0 }}>
           <View style={styles.imageContainer}>
             <Image
-              source={{ uri: item?.image }}
+              source={item?.sourceImage}
               style={styles.introImageStyle}
               resizeMode="cover"
             />

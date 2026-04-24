@@ -20,28 +20,45 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { blobToBase64 } from '../../Library/Common';
 import { windowHeight, windowWidth } from '../../utils/Dimensions';
 import { THEMES, HIT } from '../../themes/bookReaderThemes';
-import { useDispatch } from 'react-redux';
-import { setBookLocation } from '../../redux/features/books/booksSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  addBookmarkBookPage,
+  removeBookmarkBookaPage,
+  setBookLocation,
+} from '../../redux/features/books/booksSlice';
 import ReaderPanel from '../common/EpubReaderComponents/ReaderPanel';
 import FormInput from '../form/FormInput';
+import EpubBottomSheet from '../bottomSheet/EpubBottomSheet';
+import FontsDisplay from '../common/EpubReaderComponents/FontsDisplay';
 
 // How many px the user must swipe horizontally to trigger a page turn
 const SWIPE_THRESHOLD = 50;
 // How many px of vertical drift is still considered a horizontal swipe
 const SWIPE_MAX_VERT = 80;
 
-const EpubReader = ({ bookUrl, bookId, bookTitle = 'Book', props }) => {
+const EpubReader2 = ({ bookUrl, bookId, bookTitle = 'Book', props }) => {
+  // console.log('proooo', props);
+
   const navigation = useNavigation();
   const dispatch = useDispatch();
 
-  const webRef = useRef(null);
+  const state = useSelector(state => state);
+  const reduxBookmarks = state?.books?.bookmarkBookPages?.[bookId];
 
+  const bookmarks = reduxBookmarks?.bookmarks || [];
+  // const bookmarksss = state?.books?.bookmarkBookPages;
+  console.log('bookmarks', bookmarks);
+
+  const webRef = useRef(null);
+  const bottomSheetRef = useRef();
   // Book state
   const [savedLocation, setSavedLocation] = useState(null);
   const [epubBase64, setEpubBase64] = useState(null);
   const [isWebViewReady, setIsWebViewReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   // Reader UI state
   const [progress, setProgress] = useState(0);
@@ -57,11 +74,85 @@ const EpubReader = ({ bookUrl, bookId, bookTitle = 'Book', props }) => {
   const [noteInput, setNoteInput] = useState('');
 
   // page alignement (left, center, right)
-  const [textAlign, setTextAlign] = useState('justify'); // 'left' | 'justify' | 'center'
+  const [textAlign, setTextAlign] = useState('left');
+
+  // page formatting useEffect
+  useEffect(() => {
+    if (isWebViewReady) {
+      sendMessage({ type: 'SET_ALIGNMENT', align: textAlign });
+      console.log('textAlign', textAlign);
+    }
+  }, [textAlign]);
+
+  // font family etc
+  const [fontFamily, setFontFamily] = useState('');
 
   useEffect(() => {
-    sendMessage({ type: 'SET_ALIGNMENT', align: textAlign });
-  }, [textAlign]);
+    if (isWebViewReady) {
+      sendMessage({ type: 'SET_FONT_FAMILY', family: fontFamily });
+      console.log('fontFamily', fontFamily);
+      // bottomSheetRef?.current?.close();
+    }
+  }, [fontFamily]);
+
+  // font size
+  const [fontSizee, setFontSizee] = useState(16);
+
+  useEffect(() => {
+    if (isWebViewReady) {
+      sendMessage({ type: 'SET_FONT_SIZEE', fontSizee: fontSizee });
+      console.log('fontSizee', fontSizee);
+      // bottomSheetRef?.current?.close();
+    }
+  }, [fontSizee]);
+
+  // line height
+  const [lineHeight, setLineHeight] = useState(1.4);
+  useEffect(() => {
+    if (isWebViewReady) {
+      sendMessage({ type: 'SET_LINE_HEIGHT', lineHeight: lineHeight });
+      console.log('lineHeight', lineHeight);
+      // bottomSheetRef?.current?.close();
+    }
+  }, [lineHeight]);
+
+  // hyphenation
+  const [hyphenation, setHyphenation] = useState(false);
+  useEffect(() => {
+    if (isWebViewReady) {
+      sendMessage({ type: 'SET_HYPHENATION', hyphenation: hyphenation });
+      console.log('hyphenation', hyphenation);
+      // bottomSheetRef?.current?.close();
+    }
+  }, [hyphenation]);
+
+  // tts segment
+  const [ttsStatus, setTTSStatus] = useState('');
+
+  useEffect(() => {
+    if (isWebViewReady) {
+      if (ttsStatus?.type === 'play') {
+        sendMessage({ type: 'START_TTS' });
+      } else if (ttsStatus?.type === 'pause') {
+        sendMessage({ type: 'STOP_TTS' });
+      } else if (ttsStatus?.type === 'speed') {
+        sendMessage({ type: 'SET_TTS_RATE', rate: ttsStatus?.rate });
+      } else {
+        sendMessage({
+          type: 'SET_TTS_RATE',
+          rate: 1,
+        });
+      }
+      console.log('ttsStatusttsStatus', ttsStatus);
+      // bottomSheetRef?.current?.close();
+    }
+  }, [ttsStatus]);
+
+  // bookmark
+  const [currentLocation, setCurrentLocation] = useState(null);
+  const isBookmarked = bookmarks?.some(
+    b => b.location === currentLocation?.cfi,
+  );
 
   // Toolbar fade animation
   const toolbarOpacity = useRef(new Animated.Value(0)).current;
@@ -153,6 +244,10 @@ const EpubReader = ({ bookUrl, bookId, bookTitle = 'Book', props }) => {
     `);
   }, []);
 
+  const sendMessage2 = useCallback(payload => {
+    webRef.current?.postMessage(JSON.stringify(payload));
+  }, []);
+
   //   Handle messages received from the WebView (progress updates, logs, errors)
   const handleMessage = useCallback(
     async event => {
@@ -163,6 +258,13 @@ const EpubReader = ({ bookUrl, bookId, bookTitle = 'Book', props }) => {
             setProgress(data?.progress);
             setIsAtStart(data?.isAtStart || false);
             setIsAtEnd(data?.isAtEnd || false);
+            setCurrentPage(data?.currentPage || 0);
+            setTotalPages(data?.totalPages || 0);
+
+            setCurrentLocation({
+              cfi: data?.location,
+              page: data?.currentPage,
+            });
 
             await AsyncStorage.setItem(
               `progress_${bookId}`,
@@ -191,12 +293,23 @@ const EpubReader = ({ bookUrl, bookId, bookTitle = 'Book', props }) => {
               [];
 
             // prevent duplicates
-            if (!existing.includes(newBookmark)) {
+            if (!existing?.includes(newBookmark)) {
               const updated = [...existing, newBookmark];
 
               await AsyncStorage.setItem(
                 `bookmarks_${bookId}`,
                 JSON.stringify(updated),
+              );
+
+              // dispatch to redux to save boomarks for each book
+              dispatch(
+                addBookmarkBookPage({
+                  bookId,
+                  location: newBookmark,
+                  text: selectedText?.text || '',
+                  page: currentPage,
+                  bookInfo: props,
+                }),
               );
             }
 
@@ -266,8 +379,29 @@ const EpubReader = ({ bookUrl, bookId, bookTitle = 'Book', props }) => {
   );
 
   // bookmark feature
+  // const handleAddBookmark = useCallback(() => {
+  //   sendMessage({ type: 'GET_CURRENT_LOCATION' });
+  // }, [sendMessage]);
+
   const handleAddBookmark = () => {
-    sendMessage({ type: 'GET_CURRENT_LOCATION' });
+    if (!currentLocation?.cfi) return;
+
+    const payload = {
+      bookId,
+      location: currentLocation.cfi,
+      page: currentPage,
+      bookInfo: props,
+    };
+
+    // const isBookmarked = bookmarks?.some(
+    //   b => b.location === currentLocation.cfi,
+    // );
+
+    if (isBookmarked) {
+      dispatch(removeBookmarkBookaPage(payload));
+    } else {
+      dispatch(addBookmarkBookPage(payload));
+    }
   };
 
   const goToBookmark = cfi => {
@@ -309,7 +443,12 @@ const EpubReader = ({ bookUrl, bookId, bookTitle = 'Book', props }) => {
     PanResponder.create({
       // We want to consider being the responder for every touch
       onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 8,
+      // onStartShouldSetPanResponder: () => false,
+
+      onMoveShouldSetPanResponder: (_, g) => {
+        return Math.abs(g.dx) > 12 && Math.abs(g.dy) < 80;
+      },
+      // onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 8,
       onStartShouldSetPanResponderCapture: () => false, // don't steal taps from links
       onMoveShouldSetPanResponderCapture: (_, g) => Math.abs(g.dx) > 12,
 
@@ -337,8 +476,7 @@ const EpubReader = ({ bookUrl, bookId, bookTitle = 'Book', props }) => {
 
         if (isHorizontalSwipe) {
           // Swipe left → next page, swipe right → previous page
-          if (dx < 0) goNext();
-          else goPrev();
+          dx < 0 ? goNext() : goPrev();
           return;
         }
 
@@ -430,12 +568,30 @@ const EpubReader = ({ bookUrl, bookId, bookTitle = 'Book', props }) => {
         theme={theme}
         progress={progress}
         changeFontSize={changeFontSize}
-        onPageFormat
+        onPageFormat={align => {
+          setTextAlign(align);
+          console.log('assss', align);
+        }}
         onAddNotes={saveNote}
-        handleAddBookmark
+        isBookmarked={isBookmarked}
+        handleAddBookmark={handleAddBookmark}
         onSettings
-        onTTSChange
-        onViewChange
+        onViewChange={() => {
+          bottomSheetRef?.current?.open();
+        }}
+        onTTSChange={status => {
+          console.log('ttsStatus', status);
+          setTTSStatus(status);
+        }}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onSlidingComplete={value => {
+          console.log('slidingpage', value);
+          sendMessage({
+            type: 'GO_TO_PAGE',
+            page: value,
+          });
+        }}
       />
 
       {noteModalVisible && (
@@ -479,11 +635,41 @@ const EpubReader = ({ bookUrl, bookId, bookTitle = 'Book', props }) => {
           </TouchableOpacity>
         </View>
       )}
+
+      <EpubBottomSheet
+        bottomSheetRef={bottomSheetRef}
+        bottomsheetTitle={'Reading View Options'}
+        height={2.7}
+        children={
+          <FontsDisplay
+            selectedFont={fontFamily}
+            onFontChange={family => {
+              // console.log('fontfamily', family);
+              setFontFamily(family);
+            }}
+            fontSize={fontSizee}
+            onFontSizeChange={fos => {
+              // console.log('setFontSizee', fos);
+              setFontSizee(fos);
+            }}
+            lineHeight={lineHeight}
+            onLineHeightChange={lh => {
+              // console.log('setLineHeight', lh);
+              setLineHeight(lh);
+            }}
+            hyphenation={hyphenation}
+            onHyphenationChange={hyphen => {
+              setHyphenation(hyphen);
+              console.log('hyphenation', hyphen);
+            }}
+          />
+        }
+      />
     </SafeAreaView>
   );
 };
 
-export default EpubReader;
+export default EpubReader2;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // WEBVIEW HTML
@@ -504,14 +690,12 @@ function getReaderHtml() {
     * { margin:0; padding:0; box-sizing:border-box; }
     html, body {
       height: 100%; width: 100%;
-      overflow: hidden;
+      overflow: auto;
       background: var(--bg, #ffffff);
-      /* Prevent iOS rubber-band scroll bleeding through */
-      position: fixed;
+      position: relative;
       top: 0; left: 0;
     }
     #viewer { height: 100%; width: 100%; }
-    /* Ensure epub.js iframe fills its slot */
     #viewer iframe { border: none !important; }
 
     .note-icon {
@@ -526,11 +710,12 @@ function getReaderHtml() {
 <body>
   <div id="viewer"></div>
   <script>
-    var book           = null;
-    var rendition      = null;
-    var currentFontSize = 100;
-    var currentTheme   = 'light';
-    var locationsReady = false;
+    var book             = null;
+    var rendition        = null;
+    var currentFontSize  = 100;
+    var currentTheme     = 'light';
+    var currentAlignment = 'left';
+    var locationsReady   = false;
 
     var THEMES = {
       light: { background: '#ffffff', color: '#1a1a1a' },
@@ -538,24 +723,37 @@ function getReaderHtml() {
       dark:  { background: '#1a1a1a', color: '#d8d4cc' },
     };
 
-    /* ── Forward errors to RN ── */
     window.onerror = function(msg, src, line) {
       rn('ERROR', { message: msg + ' (line ' + line + ')' });
       return false;
     };
 
-    /* ── Message bridge ── */
+    // tts
+    var ttsUtterance = null;
+    var ttsPlaying = false;
+    var ttsRate = 1;
+
     function receiveMessage(event) {
       try {
         var data = JSON.parse(event.data);
         switch(data.type) {
-          case 'LOAD_BOOK':     loadBook(data.base64, data.location); break;
-          case 'NEXT_PAGE':     if(rendition) rendition.next();       break;
-          case 'PREV_PAGE':     if(rendition) rendition.prev();       break;
-          case 'SET_FONT_SIZE': setFontSize(data.size);               break;
-          case 'SET_THEME':     applyTheme(data.theme);               break;
-          case 'SET_ALIGNMENT': setAlignment(data.align);             break;
-          case 'GET_CURRENT_LOCATION':    
+          case 'LOAD_BOOK':     loadBook(data.base64, data.location);  break;
+          case 'NEXT_PAGE':     if (rendition) rendition.next();       break;
+          case 'PREV_PAGE':     if (rendition) rendition.prev();       break;
+          case 'SET_FONT_SIZE': setFontSize(data.size);                break;
+          case 'SET_THEME':     applyTheme(data.theme);                break;
+          case 'SET_ALIGNMENT': setAlignment(data.align);              break;
+          case 'SET_FONT_FAMILY': setFontFamily(data.family);          break;
+          case 'SET_LINE_HEIGHT': setLineHeight(data.lineHeight);      break;
+          case 'SET_FONT_SIZEE': setFontSizee(data.fontSizee);         break;
+          case 'SET_HYPHENATION': setHyphenation(data.hyphenation);    break;
+          case 'GET_TEXT_FOR_TTS': sendTextForTTS();                   break;
+
+          case 'START_TTS':     startTTS();                            break;
+          case 'STOP_TTS':      stopTTS();                             break;
+          case 'SET_TTS_RATE':  setTTSRate(data.rate);                 break;
+
+          case 'GET_CURRENT_LOCATION':
             if (rendition) {
               var loc = rendition.currentLocation();
               if (loc && loc.start && loc.start.cfi) {
@@ -563,9 +761,28 @@ function getReaderHtml() {
                   location: loc.start.cfi
                 });
               }
+            }                                                          break;
+                                                                      
+          case 'GO_TO_LOCATION': if (rendition) rendition.display(data.location);   break;
+          case 'GO_TO_PAGE':
+            if (book && rendition && locationsReady) {
+              try {
+                var cfi = book.locations.cfiFromLocation(data.page);
+                rendition.display(cfi);
+              } catch (e) {
+                rn('ERROR', { message: 'GO_TO_PAGE failed: ' + e.message });
+              }
             }
-          break;
-          case 'GO_TO_LOCATION': if (rendition) rendition.display(data.location); break;
+                                                                        break;
+
+          case 'TEXT_SELECTED':
+            setSelectedText({
+              text: data.text,
+              location: data.location,
+            });
+
+            setNoteModalVisible(true);
+                                                                        break;
           case 'HIGHLIGHT_NOTE':
             if (rendition) {
               rendition.annotations.add(
@@ -597,7 +814,6 @@ function getReaderHtml() {
     window.addEventListener('message', receiveMessage);
     document.addEventListener('message', receiveMessage);
 
-    /* ── Post to React Native ── */
     function rn(type, payload) {
       try {
         window.ReactNativeWebView && window.ReactNativeWebView.postMessage(
@@ -606,11 +822,9 @@ function getReaderHtml() {
       } catch(e) {}
     }
 
-    /* ── Load book from base64 ArrayBuffer ── */
     function loadBook(base64, location) {
       if (!base64) return;
 
-      /* Convert base64 → ArrayBuffer */
       var binary = atob(base64);
       var bytes  = new Uint8Array(binary.length);
       for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
@@ -624,27 +838,38 @@ function getReaderHtml() {
         allowScriptedContent: true,
       });
 
-      /* Display the book immediately — don't block on location generation */
       rendition.display(location || undefined)
         .then(function() {
           applyTheme(currentTheme);
           rendition.themes.fontSize(currentFontSize + '%');
+          setAlignment(currentAlignment);
 
-          /* Report page turns back to RN */
           rendition.on('relocated', function(loc) {
             var progress = 0;
-            if (locationsReady) {
-              try { progress = Math.floor(book.locations.percentageFromCfi(loc.start.cfi) * 100); } catch(e) {}
+            var currentPage = 0;
+            var totalPages = 0;
+
+            if (locationsReady && book.locations.total > 0) {
+              try {
+                percentage = book.locations.percentageFromCfi(loc.start.cfi) || 0
+
+                progress = Math.floor(percentage * 100);
+                totalPages = book.locations.total;
+                currentPage = Math.floor(book.locations.locationFromCfi(loc.start.cfi));
+                
+              } catch(e) {}
             }
+
             rn('PROGRESS', {
               progress: progress,
               location: loc.start.cfi,
+              currentPage,
+              totalPages,
               isAtStart: !!loc.atStart,
               isAtEnd:   !!loc.atEnd,
             });
           });
 
-          /* Generate locations in background — progress bar fills in after */
           book.locations.generate(1000).then(function() {
             locationsReady = true;
             rn('LOG', { message: 'Locations ready' });
@@ -659,13 +884,11 @@ function getReaderHtml() {
       });
     }
 
-    /* ── Font size ── */
     function setFontSize(size) {
       currentFontSize = size;
       if (rendition) rendition.themes.fontSize(size + '%');
     }
 
-    /* ── Theme ── */
     function applyTheme(name) {
       currentTheme = name;
       var t = THEMES[name] || THEMES.light;
@@ -674,34 +897,287 @@ function getReaderHtml() {
       if (rendition) {
         rendition.themes.override('background', t.background);
         rendition.themes.override('color',      t.color);
-        /* Re-inject into the iframe on next render */
+
         rendition.views().forEach(function(view) {
           try {
             var doc = view.document;
             if (!doc) return;
             var s = doc.getElementById('__theme__');
-            if (!s) { s = doc.createElement('style'); s.id = '__theme__'; (doc.head||doc.body).appendChild(s); }
+            if (!s) {
+              s = doc.createElement('style');
+              s.id = '__theme__';
+              (doc.head||doc.body).appendChild(s);
+            }
             s.textContent = 'body,p,div,span { background:' + t.background + ' !important; color:' + t.color + ' !important; }';
           } catch(e) {}
         });
+
+        // Re-apply alignment after theme changes
+        setAlignment(currentAlignment);
       }
     }
 
-    /* ── add notes segment ── */
-    document.addEventListener('selectionchange', function() {
-      const text = window.getSelection().toString();
-
-      if (text?.length > 5) {
-        const loc = rendition.currentLocation();
-
-        rn('TEXT_SELECTED', {
-          text,
-          location: loc?.start?.cfi
-        });
+    function setAlignment(align) {
+      if (!rendition) {
+        currentAlignment = align || 'left';
+        return;
       }
-    });
 
-    /* ── Resize handler (orientation change) ── */
+      var valid = ['left', 'right', 'center', 'justify'];
+      if (!valid.includes(align)) align = 'left';
+      currentAlignment = align;
+
+      // For future renders
+      rendition.themes.override('text-align', align);
+
+      // For already rendered views
+      rendition.views().forEach(function(view) {
+        try {
+          var doc = view.document;
+          if (!doc) return;
+
+          var style = doc.getElementById('__alignment__');
+          if (!style) {
+            style = doc.createElement('style');
+            style.id = '__alignment__';
+            (doc.head || doc.body).appendChild(style);
+          }
+
+      style.textContent =
+        'body, p, div, span { text-align: ' + align + ' !important; }';
+        } catch(e) {
+         console.log('hhh', e)
+        }
+      });
+    }
+
+    // font family segment
+    function setFontFamily(family) {
+      if (!rendition) return;
+
+      rendition.themes.override('font-family', family);
+
+      rendition.views().forEach(view => {
+        const doc = view.document;
+        if (!doc) return;
+
+        let style = doc.getElementById('__fontfamily__');
+        if (!style) {
+          style = doc.createElement('style');
+          style.id = '__fontfamily__';
+          doc.head.appendChild(style);
+        }
+
+        style.textContent = 
+          'body, p, div, span { font-family: ' + family +' !important; }';
+      });
+    }
+
+    // font size slider segment
+    function setFontSizee(fontSizee) {
+      if (!rendition) return;
+
+      rendition.themes.override('font-size', fontSizee);
+
+      rendition.views().forEach(view => {
+        const doc = view.document;
+        if (!doc) return;
+
+        let style = doc.getElementById('__fontsize__');
+        if (!style) {
+          style = doc.createElement('style');
+          style.id = '__fontsize__';
+          doc.head.appendChild(style);
+        }
+
+        style.textContent = 
+          'body, p, div, span { font-size: ' + fontSizee +'px !important; }';
+      });
+    }
+
+    function setLineHeight(lineHeight) {
+      if (!rendition) return;
+
+      // Apply to future renders
+      rendition.themes.override('line-height', lineHeight);
+
+      // Apply to already-rendered iframes
+      rendition.views().forEach(view => {
+        const doc = view.document;
+        if (!doc) return;
+
+        let style = doc.getElementById('__lineheight__');
+        if (!style) {
+          style = doc.createElement('style');
+          style.id = '__lineheight__';
+          doc.head.appendChild(style);
+        }
+
+        style.textContent =
+          'body, p, div, span { line-height: ' + lineHeight + ' !important; }';
+      });
+    }
+
+    // hyphenation segment
+    function setHyphenation(hyphenation) {
+      currentHyphenation = hyphenation;
+
+      if (!rendition) return;
+
+      var value = hyphenation ? 'auto' : 'none';
+
+      // Apply for future renders
+      rendition.themes.override('hyphens', value);
+      rendition.themes.override('-webkit-hyphens', value);
+      rendition.themes.override('-ms-hyphens', value);
+
+      // Apply to already rendered views
+      rendition.views().forEach(function(view) {
+        try {
+          var doc = view.document;
+          if (!doc) return;
+
+          // ⚠️ IMPORTANT: ensure language exists
+          doc.documentElement.setAttribute('lang', 'en');
+
+          var style = doc.getElementById('__hyphenation__');
+          if (!style) {
+            style = doc.createElement('style');
+            style.id = '__hyphenation__';
+            (doc.head || doc.body).appendChild(style);
+          }
+
+          style.textContent =
+            'body, p, div, span {' +
+            'hyphens: ' + value + ' !important;' +
+            '-webkit-hyphens: ' + value + ' !important;' +
+            '-ms-hyphens: ' + value + ' !important;' +
+            '}';
+        } catch (e) {}
+      });
+    }
+
+    // tts segment
+    function sendTextForTTS() {
+      if (!rendition) return;
+
+      const iframe = document.querySelector('#viewer iframe');
+      if (!iframe) return;
+
+      const doc = iframe.contentDocument || iframe.contentWindow.document;
+      if (!doc) return;
+
+      const text = doc.body.innerText || '';
+
+      rn('TTS_TEXT', { text });
+    }
+
+    function startTTS() {
+      if (!rendition) return;
+
+      stopTTS();
+
+      try {
+        var contents = rendition.getContents();
+
+        if (!contents || !contents.length) return;
+
+        var doc = contents[0].document;
+        if (!doc) return;
+
+        var text = doc.body?.innerText || '';
+
+        if (!text || text.length < 10) return;
+
+        ttsUtterance = new SpeechSynthesisUtterance(text);
+        ttsUtterance.rate = ttsRate;
+
+        speechSynthesis.speak(ttsUtterance);
+        ttsPlaying = true;
+
+      } catch (e) {
+        rn('ERROR', { message: 'TTS failed: ' + e.message });
+      }
+    }
+
+    // function startTTS() {
+    //   if (!rendition) return;
+
+    //   stopTTS(); // reset if already playing
+
+    //   try {
+    //     var views = rendition.views();
+    //     if (!views.length) return;
+
+    //     var doc = views[0].document;
+    //     if (!doc) return;
+
+    //     var text = doc.body.innerText;
+
+    //     if (!text || text.length < 10) return;
+
+    //     ttsUtterance = new SpeechSynthesisUtterance(text);
+    //     ttsUtterance.rate = ttsRate;
+    //     ttsUtterance.pitch = 1;
+
+    //     ttsUtterance.onend = function () {
+    //       ttsPlaying = false;
+    //       rn('TTS_ENDED');
+    //     };
+
+    //     speechSynthesis.speak(ttsUtterance);
+    //     ttsPlaying = true;
+
+    //   } catch (e) {
+    //     rn('ERROR', { message: 'TTS failed: ' + e.message });
+    //   }
+    // }
+
+    function stopTTS() {
+      try {
+        speechSynthesis.cancel();
+        ttsPlaying = false;
+      } catch (e) {}
+    }
+
+    function setTTSRate(rate) {
+      ttsRate = rate;
+
+      if (ttsPlaying) {
+        startTTS(); // restart with new speed
+      }
+    }
+
+    document.addEventListener('mouseup', function() {
+  setTimeout(function () {
+    const selection = window.getSelection();
+    const text = selection.toString().trim();
+
+    if (text && text.length > 5) {
+      const loc = rendition && rendition.currentLocation();
+
+      rn('TEXT_SELECTED', {
+        text,
+        location: loc && loc.start && loc.start.cfi
+      });
+    }
+  }, 100);
+});
+
+
+    // document.addEventListener('selectionchange', function() {
+    //   const text = window.getSelection().toString();
+
+    //   if (text && text.length > 5) {
+    //     const loc = rendition && rendition.currentLocation();
+
+    //     rn('TEXT_SELECTED', {
+    //       text,
+    //       location: loc && loc.start && loc.start.cfi
+    //     });
+    //   }
+    // });
+
     window.addEventListener('resize', function() {
       if (rendition) rendition.resize(window.innerWidth, window.innerHeight);
     });
@@ -733,6 +1209,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     zIndex: 5,
     backgroundColor: 'rgba(255,0,0,0.05)',
+    // pointerEvents: 'box-none',
   },
 
   // Subtle left/right edge arrows

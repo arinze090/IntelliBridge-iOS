@@ -14,6 +14,9 @@ const BookmarksScreen = ({ navigation }) => {
   const state = useSelector(state => state);
   const reduxBookmarkedBooks = state?.books?.bookmarkedBooks || [];
 
+  const reduxBookmarkBooksPage = state?.books?.bookmarkBookPages;
+  console.log('reduxBookmarkBooksPage', reduxBookmarkBooksPage);
+
   const renderItem = ({ item }) => {
     return (
       <BookCard

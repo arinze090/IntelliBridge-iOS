@@ -3,6 +3,7 @@ export const sliderData = [
     id: 1,
     image:
       'https://res.cloudinary.com/dj16pc6ym/image/upload/v1771959947/Screenshot_2026-02-24_at_19.04.44_lp8lmn.png',
+    sourceImage: require('../assets/onboard1.png'),
     title: 'Digital Library',
     description:
       'Buy new books and audiobooks without leaving the app. Explore a wide selection of titles, genres, and authors, and find your next great read today.',
@@ -11,6 +12,7 @@ export const sliderData = [
     id: 2,
     image:
       'https://res.cloudinary.com/dj16pc6ym/image/upload/v1771959950/Screenshot_2026-02-24_at_19.04.05_l0hndv.png',
+    sourceImage: require('../assets/onboard2.png'),
     title: 'Quick Action Zones',
     description:
       'Use quick action zones to read, turn pages, and add bookmarks with a single touch.',
@@ -19,6 +21,7 @@ export const sliderData = [
     id: 3,
     image:
       'https://res.cloudinary.com/dj16pc6ym/image/upload/v1771959946/Screenshot_2026-02-24_at_19.03.27_xz6n7n.png',
+    sourceImage: require('../assets/onboard3.png'),
     title: 'Audiobooks Player',
     description:
       'A new player will improve your audiobooks experience with enhanced controls and seamless playback.',

@@ -292,6 +292,7 @@ const MainScreen = () => {
             'Register',
             'LibraryBookDetails',
             'EditProfile',
+            'BookReader',
           ];
           if (routeWithNoTarBar.includes(routeName)) {
             return { display: 'none' };

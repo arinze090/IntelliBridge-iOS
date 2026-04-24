@@ -105,16 +105,16 @@ const LibraryBookDetails = ({ navigation, route }) => {
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <CategoryCard
             iconName={'layers-outline'}
-            props={item?.category?.name}
+            props={item?.bookInfo?.category?.name}
           />
           <CategoryCard
             iconName={'book-outline'}
-            props={item?.bookFormat == 'epub' && 'E-book'}
+            props={item?.bookInfo?.bookFormat == 'epub' && 'E-book'}
           />
           {item?.isbn && (
             <CategoryCard
               iconName={'barcode-outline'}
-              props={item?.isbn && `ISBN: ${item?.isbn}`}
+              props={item?.bookInfo?.isbn && `ISBN: ${item?.bookInfo?.isbn}`}
             />
           )}
         </ScrollView>
