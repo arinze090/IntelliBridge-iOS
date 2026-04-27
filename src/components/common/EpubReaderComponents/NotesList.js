@@ -8,10 +8,23 @@ import {
 import React from 'react';
 
 const NotesList = ({ notes, onPressNotes }) => {
+  const normalizedNotes = Array.isArray(notes)
+    ? notes
+    : notes && typeof notes === 'object'
+    ? [notes]
+    : [];
+
+  const renderText = item => {
+    if (typeof item === 'string') return item;
+    if (item == null) return '';
+    if (typeof item === 'object') return JSON.stringify(item);
+    return String(item);
+  };
+
   return (
     <View style={{ flex: 1, padding: 10 }}>
       <ScrollView>
-        {notes?.map((b, index) => (
+        {normalizedNotes?.map((b, index) => (
           <TouchableOpacity
             activeOpacity={0.9}
             key={index}
@@ -28,21 +41,23 @@ const NotesList = ({ notes, onPressNotes }) => {
               Page {b?.page || index + 1}
             </Text> */}
 
-            {/* Optional snippet */}
-            {b?.text && (
+            {b?.text ? (
               <Text numberOfLines={2} style={{ color: '#666', marginTop: 4 }}>
                 Highlighted:{' '}
                 <Text style={{ fontWeight: '600', color: '#000' }}>
-                  {b?.text}
+                  {renderText(b?.text)}
                 </Text>
               </Text>
-            )}
+            ) : null}
 
-            {b?.text && (
+            {b?.note ? (
               <Text numberOfLines={2} style={{ color: '#666', marginTop: 4 }}>
-                Added Note: <Text style={{ fontWeight: '600', color: '#000' }}>{b?.note}</Text>
+                Added Note:{' '}
+                <Text style={{ fontWeight: '600', color: '#000' }}>
+                  {renderText(b?.note)}
+                </Text>
               </Text>
-            )}
+            ) : null}
           </TouchableOpacity>
         ))}
       </ScrollView>

@@ -222,16 +222,25 @@ const EpubReader2 = ({ bookUrl, bookId, bookTitle = 'Book', props }) => {
 
   // notes
 
+  const normalizeNotes = storedValue => {
+    if (!storedValue) return [];
+    if (Array.isArray(storedValue)) return storedValue;
+    if (typeof storedValue === 'object') return [storedValue];
+    return [];
+  };
+
   const loadAndInjectNotes = async () => {
-    const savedNotes =
-      JSON.parse(await AsyncStorage.getItem(`notes_${bookId}`)) || [];
+    const rawNotes = JSON.parse(await AsyncStorage.getItem(`notes_${bookId}`));
+    const savedNotes = normalizeNotes(rawNotes);
 
     setNotes(savedNotes);
-    savedNotes.forEach(n => {
-      sendMessage({
-        type: 'HIGHLIGHT_NOTE',
-        location: n.location,
-      });
+    savedNotes?.forEach(n => {
+      if (n?.location) {
+        sendMessage({
+          type: 'HIGHLIGHT_NOTE',
+          location: n?.location,
+        });
+      }
     });
   };
 
@@ -427,8 +436,10 @@ const EpubReader2 = ({ bookUrl, bookId, bookTitle = 'Book', props }) => {
   const saveNote = async noteText => {
     if (!selectedText?.location) return;
 
-    const existing =
-      JSON.parse(await AsyncStorage.getItem(`notes_${bookId}`)) || [];
+    const rawExisting = JSON.parse(
+      await AsyncStorage.getItem(`notes_${bookId}`),
+    );
+    const existing = normalizeNotes(rawExisting);
 
     const updated = [
       ...existing,
