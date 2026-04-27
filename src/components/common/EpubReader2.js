@@ -27,9 +27,12 @@ import {
   setBookLocation,
 } from '../../redux/features/books/booksSlice';
 import ReaderPanel from '../common/EpubReaderComponents/ReaderPanel';
-import FormInput from '../form/FormInput';
 import EpubBottomSheet from '../bottomSheet/EpubBottomSheet';
 import FontsDisplay from '../common/EpubReaderComponents/FontsDisplay';
+import PaginationSlider from '../common/EpubReaderComponents/PaginationSlider';
+import AddNotesModal from '../common/EpubReaderComponents/AddNotesModal';
+import BookmarkList from '../common/EpubReaderComponents/BookmarkList';
+import NotesList from '../common/EpubReaderComponents/NotesList';
 
 // How many px the user must swipe horizontally to trigger a page turn
 const SWIPE_THRESHOLD = 50;
@@ -46,11 +49,15 @@ const EpubReader2 = ({ bookUrl, bookId, bookTitle = 'Book', props }) => {
   const reduxBookmarks = state?.books?.bookmarkBookPages?.[bookId];
 
   const bookmarks = reduxBookmarks?.bookmarks || [];
-  // const bookmarksss = state?.books?.bookmarkBookPages;
-  console.log('bookmarks', bookmarks);
+  const bookmarksss = state?.books?.bookmarkBookPages;
+  console.log('bookmarks', bookmarks, bookmarksss);
 
   const webRef = useRef(null);
   const bottomSheetRef = useRef();
+  const pageSliderBottomSheetRef = useRef();
+  const bookmarkBottomSheetRef = useRef();
+  const notesBottomSheetRef = useRef();
+
   // Book state
   const [savedLocation, setSavedLocation] = useState(null);
   const [epubBase64, setEpubBase64] = useState(null);
@@ -72,6 +79,8 @@ const EpubReader2 = ({ bookUrl, bookId, bookTitle = 'Book', props }) => {
   const [selectedText, setSelectedText] = useState(null);
   const [noteModalVisible, setNoteModalVisible] = useState(false);
   const [noteInput, setNoteInput] = useState('');
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [notes, setNotes] = useState([]);
 
   // page alignement (left, center, right)
   const [textAlign, setTextAlign] = useState('left');
@@ -214,10 +223,11 @@ const EpubReader2 = ({ bookUrl, bookId, bookTitle = 'Book', props }) => {
   // notes
 
   const loadAndInjectNotes = async () => {
-    const notes =
+    const savedNotes =
       JSON.parse(await AsyncStorage.getItem(`notes_${bookId}`)) || [];
 
-    notes.forEach(n => {
+    setNotes(savedNotes);
+    savedNotes.forEach(n => {
       sendMessage({
         type: 'HIGHLIGHT_NOTE',
         location: n.location,
@@ -300,20 +310,30 @@ const EpubReader2 = ({ bookUrl, bookId, bookTitle = 'Book', props }) => {
                 `bookmarks_${bookId}`,
                 JSON.stringify(updated),
               );
-
-              // dispatch to redux to save boomarks for each book
-              dispatch(
-                addBookmarkBookPage({
-                  bookId,
-                  location: newBookmark,
-                  text: selectedText?.text || '',
-                  page: currentPage,
-                  bookInfo: props,
-                }),
-              );
             }
-
             break;
+          case 'LOAD_FONT':
+            setFontFamily(data.family);
+            break;
+          case 'TEXT_SELECTED':
+            console.log('TEXT_SELECTED', data);
+            setSelectedText({
+              text: data.text,
+              location: data.location,
+            });
+
+            setNoteModalVisible(true);
+            break;
+          case 'TAP':
+            if (data.zone === 'left') {
+              goPrev();
+            } else if (data.zone === 'right') {
+              goNext();
+            } else {
+              toggleToolbar();
+            }
+            break;
+
           case 'LOG':
             console.log('[WebView]', data.message);
             break;
@@ -404,30 +424,55 @@ const EpubReader2 = ({ bookUrl, bookId, bookTitle = 'Book', props }) => {
     }
   };
 
-  const goToBookmark = cfi => {
-    sendMessage({
-      type: 'GO_TO_LOCATION',
-      location: cfi,
-    });
-  };
-
   const saveNote = async noteText => {
+    if (!selectedText?.location) return;
+
     const existing =
       JSON.parse(await AsyncStorage.getItem(`notes_${bookId}`)) || [];
 
     const updated = [
       ...existing,
       {
-        text: selectedText.text,
+        text: selectedText?.text,
         note: noteText,
-        location: selectedText.location,
+        location: selectedText?.location,
         createdAt: Date.now(),
       },
     ];
-
-    console.log('nottteee', updated);
-
+    console.log('updatedTexttttt', updated);
     await AsyncStorage.setItem(`notes_${bookId}`, JSON.stringify(updated));
+    setNotes(updated);
+  };
+
+  const handlePressBookmark = location => {
+    console.log('handlePressBookmark', location);
+    sendMessage({
+      type: 'GO_TO_LOCATION',
+      location: location?.location,
+    });
+  };
+
+  const handlePressNotes = note => {
+    console.log('handlePressNotes', note);
+    sendMessage({
+      type: 'GO_TO_LOCATION',
+      location: note?.location,
+    });
+    notesBottomSheetRef?.current.close();
+  };
+
+  const openNotesBottomSheet = () => {
+    if (bottomSheetRef?.current?.close) {
+      bottomSheetRef?.current.close();
+    }
+
+    setTimeout(() => {
+      if (notesBottomSheetRef?.current?.open) {
+        notesBottomSheetRef?.current.open();
+      } else {
+        console.warn('notesBottomSheetRef is not ready');
+      }
+    }, 250);
   };
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -518,7 +563,6 @@ const EpubReader2 = ({ bookUrl, bookId, bookTitle = 'Book', props }) => {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
       <StatusBar hidden />
-
       {/* ── The book renders here ── */}
       <WebView
         ref={webRef}
@@ -536,10 +580,11 @@ const EpubReader2 = ({ bookUrl, bookId, bookTitle = 'Book', props }) => {
         onMessage={handleMessage}
         onShouldStartLoadWithRequest={() => true}
       />
-
       {/* ── Transparent gesture overlay — sits on top of WebView ── */}
-      <View style={styles.gestureOverlay} {...panResponder.panHandlers} />
-
+      {!isSelectionMode && (
+        <View style={styles.gestureOverlay} {...panResponder.panHandlers} />
+      )}
+      {/* <View style={styles.gestureOverlay} {...panResponder.panHandlers} /> */}
       {/* ── Page edge hint arrows (subtle, fade out after first swipe) ── */}
       {!isAtStart && (
         <View style={styles.edgeLeft}>
@@ -551,7 +596,6 @@ const EpubReader2 = ({ bookUrl, bookId, bookTitle = 'Book', props }) => {
           <Text style={styles.edgeArrow}>›</Text>
         </View>
       )}
-
       {/* ── Progress bar at very bottom ── */}
       <View style={styles.progressTrack}>
         <View
@@ -562,6 +606,7 @@ const EpubReader2 = ({ bookUrl, bookId, bookTitle = 'Book', props }) => {
         />
       </View>
 
+      {/* Reader's panel */}
       <ReaderPanel
         bookTitle={bookTitle}
         toolbarOpacity={toolbarOpacity}
@@ -572,12 +617,19 @@ const EpubReader2 = ({ bookUrl, bookId, bookTitle = 'Book', props }) => {
           setTextAlign(align);
           console.log('assss', align);
         }}
-        onAddNotes={saveNote}
+        // onAddNotes={saveNote}
+        onAddNotes={() => {
+          setIsSelectionMode(prev => !prev);
+          console.log('isSelectionMode', isSelectionMode);
+        }}
         isBookmarked={isBookmarked}
         handleAddBookmark={handleAddBookmark}
         onSettings
         onViewChange={() => {
           bottomSheetRef?.current?.open();
+        }}
+        onPaginationChange={() => {
+          pageSliderBottomSheetRef?.current?.open();
         }}
         onTTSChange={status => {
           console.log('ttsStatus', status);
@@ -585,61 +637,56 @@ const EpubReader2 = ({ bookUrl, bookId, bookTitle = 'Book', props }) => {
         }}
         currentPage={currentPage}
         totalPages={totalPages}
-        onSlidingComplete={value => {
-          console.log('slidingpage', value);
-          sendMessage({
-            type: 'GO_TO_PAGE',
-            page: value,
-          });
+        onBookmarksChange={() => {
+          bookmarkBottomSheetRef?.current?.open();
         }}
+        // onSlidingComplete={value => {
+        //   console.log('slidingpage', value);
+        //   sendMessage({
+        //     type: 'GO_TO_PAGE',
+        //     page: value,
+        //   });
+        // }}
       />
 
+      {/* notes modal */}
       {noteModalVisible && (
-        <View
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            backgroundColor: 'white',
-            padding: 20,
-            zIndex: 50,
+        <AddNotesModal
+          noteInput={noteInput}
+          selectedText={selectedText}
+          setNoteInput={setNoteInput}
+          onAddNotesPress={async () => {
+            if (!selectedText?.text || !selectedText?.location) {
+              Alert.alert('No text selected');
+              return;
+            }
+
+            await saveNote(noteInput);
+
+            sendMessage({
+              type: 'HIGHLIGHT_NOTE',
+              location: selectedText.location,
+            });
+
+            setNoteModalVisible(false);
+            setNoteInput('');
+            setSelectedText(null);
+            setIsSelectionMode(false);
           }}
-        >
-          <Text>Add Note</Text>
-
-          <Text>{selectedText?.text}</Text>
-
-          <FormInput
-            placeholder="Write note..."
-            value={noteInput}
-            onChangeText={setNoteInput}
-            style={{ borderWidth: 1, marginTop: 10 }}
-          />
-
-          <TouchableOpacity
-            onPress={async () => {
-              await saveNote(noteInput);
-
-              // 🔥 inject highlight after saving
-              sendMessage({
-                type: 'HIGHLIGHT_NOTE',
-                location: selectedText.location,
-              });
-
-              setNoteModalVisible(false);
-              setNoteInput('');
-            }}
-          >
-            <Text>Save</Text>
-          </TouchableOpacity>
-        </View>
+          onCancelNotes={() => {
+            setNoteModalVisible(false);
+            setNoteInput('');
+            setSelectedText(null);
+            setIsSelectionMode(false);
+          }}
+        />
       )}
 
+      {/* View for Fonts Display */}
       <EpubBottomSheet
         bottomSheetRef={bottomSheetRef}
         bottomsheetTitle={'Reading View Options'}
-        height={2.7}
+        height={2.2}
         children={
           <FontsDisplay
             selectedFont={fontFamily}
@@ -662,8 +709,53 @@ const EpubReader2 = ({ bookUrl, bookId, bookTitle = 'Book', props }) => {
               setHyphenation(hyphen);
               console.log('hyphenation', hyphen);
             }}
+            onViewNotes={() => {
+              console.log('onViewNotes');
+              openNotesBottomSheet();
+            }}
           />
         }
+      />
+
+      {/* Page Slider Bottom Sheet */}
+      <EpubBottomSheet
+        bottomSheetRef={pageSliderBottomSheetRef}
+        bottomsheetTitle={'Slide to Page'}
+        height={5}
+        children={
+          <PaginationSlider
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onSlidingComplete={value => {
+              console.log('slidingpage', value);
+              sendMessage({
+                type: 'GO_TO_PAGE',
+                page: value,
+              });
+            }}
+          />
+        }
+      />
+
+      {/* bookmarks bottom sheet */}
+      <EpubBottomSheet
+        bottomSheetRef={bookmarkBottomSheetRef}
+        bottomsheetTitle={'Bookmarked Pages'}
+        height={2}
+        children={
+          <BookmarkList
+            bookmarks={bookmarks}
+            onPressBookmark={handlePressBookmark}
+          />
+        }
+      />
+
+      {/* notes bottom sheet */}
+      <EpubBottomSheet
+        bottomSheetRef={notesBottomSheetRef}
+        bottomsheetTitle={'Added Notes'}
+        height={2}
+        children={<NotesList notes={notes} onPressNotes={handlePressNotes} />}
       />
     </SafeAreaView>
   );
@@ -682,6 +774,7 @@ function getReaderHtml() {
   return `<!DOCTYPE html>
 <html>
 <head>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Open+Sans&family=Roboto&family=EB+Garamond&display=swap" rel="stylesheet">
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"><\/script>
@@ -774,37 +867,51 @@ function getReaderHtml() {
               }
             }
                                                                         break;
+          case 'notes': sendMessage({ type: 'GET_CURRENT_SELECTION' }); break;
 
-          case 'TEXT_SELECTED':
-            setSelectedText({
-              text: data.text,
-              location: data.location,
-            });
+          case 'GET_CURRENT_SELECTION':
+            const selection = window.getSelection().toString().trim();
 
-            setNoteModalVisible(true);
+            if (selection && selection.length > 5) {
+              const loc = rendition && rendition.currentLocation();
+
+              rn('TEXT_SELECTED', {
+                text: selection,
+                location: loc && loc.start && loc.start.cfi
+              });
+            }
                                                                         break;
+
           case 'HIGHLIGHT_NOTE':
             if (rendition) {
+              const id = 'note-' + data.location;
+
+              // rendition.annotations.add(
+              //   'highlight',
+              //   data.location,
+              //   { id },
+              //   null,
+              //   'note-highlight',
+              //   {
+              //     fill: 'yellow',
+              //     'fill-opacity': '0.3',
+              //     'mix-blend-mode': 'multiply'
+              //   }
+              // );
               rendition.annotations.add(
                 'highlight',
                 data.location,
-                {},
-                null,
+                { id },
+                function(e) {
+                  rn('NOTE_CLICKED', { location: data.location });
+                  console.log('Note at ' + data.location + ' clicked');
+                },
                 'note-highlight',
                 {
                   fill: 'yellow',
                   'fill-opacity': '0.3',
                   'mix-blend-mode': 'multiply'
                 }
-              );
-              rendition.annotations.add(
-                'mark',
-                data.location,
-                {},
-                function(e) {
-                  rn('NOTE_CLICKED', { location: data.location });
-                },
-                'note-icon'
               );
             }
           break;
@@ -836,6 +943,64 @@ function getReaderHtml() {
         height: window.innerHeight,
         spread: 'none',
         allowScriptedContent: true,
+        flow: 'paginated',
+        manager: 'default',
+        snap: true,
+      });
+
+     rendition.themes.default({
+  "::selection": {
+    "background": "rgba(255,165,0,0.4)"
+  },
+  ".epubjs-hl": {
+    "fill": "orange",
+    "fill-opacity": "0.4",
+    "mix-blend-mode": "multiply"
+  }
+});
+
+      // 🔥 THIS IS THE IMPORTANT PART
+      // rendition.themes.register("highlightTheme", {
+      //   ".note-highlight": {
+      //     "fill": "orange",
+      //     "fill-opacity": "0.4",
+      //     "mix-blend-mode": "multiply"
+      //   }
+      // });
+
+      // rendition.themes.select("highlightTheme");
+
+      rendition.hooks.content.register(function(contents) {
+        const doc = contents.document;
+
+         const style = doc.createElement('style');
+          style.innerHTML =
+            '.note-highlight {' +
+            ' background: rgba(255,165,0,0.35) !important;' +
+            ' border-radius: 3px;' +
+            '}' +
+            '::selection {' +
+            ' background: rgba(255,165,0,0.4);' +
+            '}';
+          doc.head.appendChild(style);
+
+        doc.addEventListener('selectionchange', function () {
+          setTimeout(() => {
+            const selection = doc.getSelection();
+            const text = selection.toString().trim();
+
+            if (text && text.length > 5) {
+            rn('LOG', { message: 'Selection detected: ' + text });
+              const loc = rendition.currentLocation();
+
+              rn('TEXT_SELECTED', {
+                text,
+                location: loc && loc.start && loc.start.cfi,
+              });
+            }
+          }, 200);
+
+        });
       });
 
       rendition.display(location || undefined)
@@ -1148,21 +1313,21 @@ function getReaderHtml() {
       }
     }
 
-    document.addEventListener('mouseup', function() {
-  setTimeout(function () {
-    const selection = window.getSelection();
-    const text = selection.toString().trim();
+//     document.addEventListener('mouseup', function() {
+//   setTimeout(function () {
+//     const selection = window.getSelection();
+//     const text = selection.toString().trim();
 
-    if (text && text.length > 5) {
-      const loc = rendition && rendition.currentLocation();
+//     if (text && text.length > 5) {
+//       const loc = rendition && rendition.currentLocation();
 
-      rn('TEXT_SELECTED', {
-        text,
-        location: loc && loc.start && loc.start.cfi
-      });
-    }
-  }, 100);
-});
+//       rn('TEXT_SELECTED', {
+//         text,
+//         location: loc && loc.start && loc.start.cfi
+//       });
+//     }
+//   }, 100);
+// });
 
 
     // document.addEventListener('selectionchange', function() {
@@ -1177,6 +1342,34 @@ function getReaderHtml() {
     //     });
     //   }
     // });
+
+    // document.addEventListener('selectionchange', function () {
+    //   setTimeout(() => {
+    //     const selection = window.getSelection();
+    //     const text = selection.toString().trim();
+
+    //     if (text && text.length > 5) {
+    //       const loc = rendition && rendition.currentLocation();
+
+    //       rn('TEXT_SELECTED', {
+    //         text,
+    //         location: loc && loc.start && loc.start.cfi,
+    //       });
+    //     }
+    //   }, 150);
+    // });
+
+    document.addEventListener('click', function(e) {
+  const width = window.innerWidth;
+  const x = e.clientX;
+
+  let zone = 'center';
+
+  if (x < width * 0.25) zone = 'left';
+  else if (x > width * 0.75) zone = 'right';
+
+  rn('TAP', { zone });
+});
 
     window.addEventListener('resize', function() {
       if (rendition) rendition.resize(window.innerWidth, window.innerHeight);
@@ -1208,8 +1401,9 @@ const styles = StyleSheet.create({
   gestureOverlay: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 5,
-    backgroundColor: 'rgba(255,0,0,0.05)',
+    // backgroundColor: 'rgba(255,0,0,0.05)',
     // pointerEvents: 'box-none',
+    backgroundColor: 'transparent',
   },
 
   // Subtle left/right edge arrows
@@ -1316,5 +1510,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
+  },
+  highlightedTextHeader: {
+    justifyContent: 'center',
+    alignContent: 'center',
+    alignItems: 'center',
+    fontSize: 17,
+    fontWeight: '700',
+    alignSelf: 'center',
+    marginTop: 10,
+    color: 'black',
+    padding: 20,
   },
 });

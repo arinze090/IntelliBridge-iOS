@@ -3,7 +3,6 @@ import React from 'react';
 import RBSheet from 'react-native-raw-bottom-sheet';
 
 import { windowHeight } from '../../utils/Dimensions';
-import { useTheme } from '../../Context/ThemeContext';
 
 const EpubBottomSheet = ({
   bottomSheetRef,
@@ -11,8 +10,6 @@ const EpubBottomSheet = ({
   children,
   bottomsheetTitle,
 }) => {
-  const { theme } = useTheme();
-
   return (
     <RBSheet
       ref={bottomSheetRef}
@@ -22,7 +19,7 @@ const EpubBottomSheet = ({
       render
       customStyles={{
         wrapper: {
-        //   backgroundColor: '#333',
+          //   backgroundColor: '#333',
         },
         draggableIcon: {
           backgroundColor: 'black',
@@ -30,13 +27,10 @@ const EpubBottomSheet = ({
         container: {
           borderTopLeftRadius: 10,
           borderTopRightRadius: 10,
-          backgroundColor: theme?.background,
         },
       }}
     >
-      <Text style={[styles.bottomSheetTitle, { color: theme?.text }]}>
-        {bottomsheetTitle}
-      </Text>
+      <Text style={[styles.bottomSheetTitle]}>{bottomsheetTitle}</Text>
       {children}
     </RBSheet>
   );

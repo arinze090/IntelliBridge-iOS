@@ -34,6 +34,7 @@ import axiosInstance from '../../utils/api-client';
 import CategoryCard from '../../components/cards/CategoryCard';
 import BottomSheet from '../../components/bottomSheet/BottomSheet';
 import PaymentButtons from '../../components/form/PaymentButtons';
+import SecondaryBtn from '../../components/form/SecondaryBtn';
 
 const isIos = Platform.OS === 'ios';
 
@@ -391,7 +392,30 @@ const BookDetails = ({ navigation, route }) => {
       </ScrollView>
 
       <View style={styles.btnSection}>
-        {item?.isInLibrary ? (
+        {item?.isActive && item?.isInLibrary ? (
+          <FormButton
+            title={'Read Now'}
+            loading={loading}
+            onPress={() => {
+              navigation.navigate('Home', { screen: 'HomeScreen' });
+
+              navigation.navigate('Books', {
+                screen: 'BooksScreen',
+                params: { item },
+              });
+            }}
+          />
+        ) : !item?.isActive && !item?.isInLibrary ? (
+          <SecondaryBtn
+            title={'Unavailable for Purchase'}
+            onPress={() => {
+              Alert.alert(
+                'Unavailable for Purchase',
+                `${item?.bookTitle} isn't available for purchase at the moment, we'll let you know when you can purchase this book.\n\nFor now, browse through our curated books to find a book of choice`,
+              );
+            }}
+          />
+        ) : !item?.isActive && item?.isInLibrary ? (
           <FormButton
             title={'Read Now'}
             loading={loading}

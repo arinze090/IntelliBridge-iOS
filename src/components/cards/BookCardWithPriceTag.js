@@ -62,27 +62,44 @@ const BookCardWithPriceTag = ({ onPress, props }) => {
         onLoadEnd={() => setIsImageLoading(false)}
         onError={() => setIsImageLoading(false)}
       />
-      <TouchableOpacity
-        activeOpacity={0.9}
-        style={[
-          styles.priceButton,
-          {
-            backgroundColor: props?.isInLibrary
-              ? COLORS?.legacyBridgeBlue
-              : COLORS?.legacyBridgePrimary,
-          },
-        ]}
-        onPress={onPress}
-      >
-        <Text
+      {props?.isActive && !props?.isInLibrary ? (
+        <TouchableOpacity
+          activeOpacity={0.9}
           style={[
-            styles.priceTag,
-            { color: props?.isInLibrary ? COLORS?.white : COLORS?.black },
+            styles.priceButton,
+            {
+              backgroundColor: COLORS?.legacyBridgePrimary,
+            },
           ]}
+          onPress={onPress}
         >
-          {props?.isInLibrary ? 'Read Now' : formatToNaira(props?.price)}
-        </Text>
-      </TouchableOpacity>
+          <Text style={[styles.priceTag, { color: COLORS?.black }]}>
+            {formatToNaira(props?.price)}
+          </Text>
+        </TouchableOpacity>
+      ) : props?.isInLibrary ? (
+        <TouchableOpacity
+          activeOpacity={0.9}
+          style={[
+            styles.ribbon,
+            {
+              backgroundColor: COLORS?.legacyBridgeBlue,
+            },
+          ]}
+          onPress={onPress}
+        >
+          <Text style={[styles.ribbonText, { color: 'white' }]}>Read Now</Text>
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity
+          activeOpacity={0.9}
+          style={styles.ribbon}
+          onPress={onPress}
+        >
+          <Text style={styles.ribbonText}>Coming Soon</Text>
+        </TouchableOpacity>
+      )}
+
       <View style={styles.bookInfoContainer}>
         <Text
           numberOfLines={1}
@@ -141,6 +158,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     borderWidth: 1,
     padding: 5,
+    overflow: 'hidden',
   },
   bookImage: {
     width: windowWidth / 2.35,
@@ -176,4 +194,23 @@ const styles = StyleSheet.create({
     right: 1,
   },
   priceTag: { color: 'black', fontSize: 12, fontWeight: '700' },
+  ribbon: {
+    position: 'absolute',
+    top: 15,
+    right: -40, // pushes it outside so rotation looks clean
+    backgroundColor: '#fff',
+    paddingVertical: 6,
+    paddingHorizontal: 35,
+    transform: [{ rotate: '40deg' }],
+    zIndex: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 5,
+  },
+
+  ribbonText: {
+    color: 'black',
+    fontWeight: '700',
+    fontSize: 12,
+  },
 });

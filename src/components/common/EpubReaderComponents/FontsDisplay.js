@@ -10,29 +10,36 @@ import {
 import React, { useState } from 'react';
 import Slider from '@react-native-community/slider';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import { windowWidth } from '../../../utils/Dimensions';
 import { COLORS } from '../../../themes/themes';
 
 const FONT_OPTIONS = [
-  { label: 'Georgia', family: 'Georgia' },
-  { label: 'Baskerville', family: 'Baskerville' },
-  { label: 'Charter', family: 'Charter' },
   { label: 'Literata', family: 'Literata' },
-  { label: 'Crimson Pro', family: 'CrimsonPro' },
-  { label: 'EB Garamond', family: 'EBGaramond' },
+  { label: 'Palatino', family: 'Palatino' },
+  { label: 'Crimson Pro', family: 'Crimson Pro' },
+  { label: 'Lora', family: 'Lora' },
+  { label: 'Merriweather', family: 'Merriweather' },
+  { label: 'Playfair Display', family: 'Playfair Display' },
 
-  { label: 'Helvetica Neue', family: 'Helvetica Neue' },
+  // { label: 'Open Sans', family: 'Open Sans' },
+  { label: 'Garamond', family: 'Garamond' },
+  // { label: 'Poppins', family: 'Poppins' },
+  // { label: 'Nunito', family: 'Nunito' },
+  { label: 'Source Sans 3', family: 'Source Sans 3' },
+
+  // { label: 'Atkinson Hyperlegible', family: 'Atkinson Hyperlegible' },
+  // { label: 'OpenDyslexic', family: 'OpenDyslexic' },
+
+  { label: 'JetBrains Mono', family: 'JetBrains Mono' },
+  // { label: 'Fira Code', family: 'Fira Code' },
+  // { label: 'Courier Prime', family: 'Courier Prime' },
+  { label: 'IBM Plex Mono', family: 'IBM Plex Mono' },
+
+  { label: 'Georgia', family: 'Georgia' },
   { label: 'Arial', family: 'Arial' },
-  { label: 'Roboto', family: 'Roboto' },
-  { label: 'Open Sans', family: 'OpenSans' },
-  { label: 'Inter', family: 'Inter' },
-
-  { label: 'OpenDyslexic', family: 'OpenDyslexic' },
-  { label: 'Atkinson Hyperlegible', family: 'AtkinsonHyperlegible' },
-
-  { label: 'Courier', family: 'Courier' },
-  { label: 'JetBrains Mono', family: 'JetBrainsMono' },
+  { label: 'Times New Roman', family: 'Times New Roman' },
 ];
 
 const FontsDisplay = ({
@@ -44,6 +51,7 @@ const FontsDisplay = ({
   onLineHeightChange,
   hyphenation,
   onHyphenationChange,
+  onViewNotes,
 }) => {
   return (
     <View>
@@ -147,6 +155,16 @@ const FontsDisplay = ({
           thumbColor={hyphenation ? '#fff' : '#f4f3f4'}
         />
       </View>
+
+      {/* View Notes */}
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={onViewNotes}
+        style={[styles.set, { marginTop: 0 }]}
+      >
+        <Text style={[styles.settingsText]}>View Notes</Text>
+        <Ionicons name="reader-outline" size={20} />
+      </TouchableOpacity>
     </View>
   );
 };

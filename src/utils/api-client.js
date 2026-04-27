@@ -1,7 +1,9 @@
 import axios from 'axios';
 import store from '../redux/store';
 
-export const baseURL = 'https://legacy-bridge-backend.onrender.com';
+// export const baseURL = 'https://legacy-bridge-backend.onrender.com';
+export const baseURL = 'https://intelli-bridge-backend.vercel.app/';
+// console.log('baseURL', baseURL);
 
 // using axios to create a reusuable instance across
 const axiosInstance = axios.create({

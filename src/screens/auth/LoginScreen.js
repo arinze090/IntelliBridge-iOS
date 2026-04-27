@@ -143,9 +143,9 @@ const LoginScreen = ({ navigation }) => {
             setFormError('');
             setEmailError('');
             if (!emailValidator(txt)) {
-              setEmailError("Please enter a valid email");
+              setEmailError('Please enter a valid email');
             } else {
-              setEmailError("");
+              setEmailError('');
             }
           }}
           // placeholderTextColor="#ccc"
@@ -196,7 +196,7 @@ const LoginScreen = ({ navigation }) => {
             title={'Sign In'}
             width={1.1}
             onPress={login}
-            disabled={!email || !password || loading}
+            disabled={!emailValidator(email) || !password || loading}
             formError={formError}
             loading={loading}
           />

@@ -77,6 +77,9 @@ const OPTIONS = {
     title: 'Slide to Page',
     // items: ['create', 'view'],
   },
+  bookmarks: {
+    title: 'Bookmarked Pages',
+  },
 };
 
 const TOOLBAR_ITEMS = [
@@ -111,11 +114,17 @@ const TOOLBAR_ITEMS = [
     onPress: 'pagination',
   },
   {
-    key: 'settings',
-    icon: 'settings-outline',
-    label: 'Settings',
-    onPress: 'settings',
+    key: 'bookmarks',
+    icon: 'bookmark-outline',
+    label: 'Bookmarks',
+    onPress: 'bookmarks',
   },
+  // {
+  //   key: 'settings',
+  //   icon: 'settings-outline',
+  //   label: 'Settings',
+  //   onPress: 'settings',
+  // },
 ];
 
 const ReaderPanel = ({
@@ -130,6 +139,8 @@ const ReaderPanel = ({
   onTTSChange,
   onAddNotes,
   onPageFormat,
+  onPaginationChange,
+  onBookmarksChange,
   onSettings,
   currentPage,
   totalPages,
@@ -274,7 +285,27 @@ const ReaderPanel = ({
           })}
 
         {/* Pagination */}
-        {activePanel === 'pagination' && (
+        {activePanel === 'pagination' &&
+          config?.items?.map(item => {
+            const isActive = activeView === item;
+
+            return (
+              <TouchableOpacity
+                key={item}
+                onPress={() => {
+                  setActiveView(item);
+                  onPaginationChange?.(item);
+                }}
+                style={[styles.alignOption, isActive && styles.alignActive]}
+              >
+                <Text style={{ color: isActive ? '#fff' : '#000' }}>
+                  {item}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+
+        {/* {activePanel === 'pagination' && (
           <View style={styles.sliderArea}>
             <Text style={styles.fontBtnSm}>{currentPage}</Text>
             <Slider
@@ -287,7 +318,7 @@ const ReaderPanel = ({
             />
             <Text style={styles.fontBtnSm}>{totalPages}</Text>
           </View>
-        )}
+        )} */}
       </View>
     );
   };
@@ -413,15 +444,22 @@ const ReaderPanel = ({
         break;
 
       case 'pagination':
-        setActivePanel('pagination');
-        setShowSelectedOptions(true);
-        break;
-
-      case 'settings':
-        // onSettings?.();
-        setActivePanel('settings');
+        onPaginationChange?.();
+        setActivePanel(null);
         setShowSelectedOptions(false);
         break;
+
+      case 'bookmarks':
+        onBookmarksChange?.();
+        setActivePanel(null);
+        setShowSelectedOptions(false);
+        break;
+
+      // case 'settings':
+      //   // onSettings?.();
+      //   setActivePanel('settings');
+      //   setShowSelectedOptions(false);
+      //   break;
     }
   };
 
@@ -554,14 +592,23 @@ const ReaderPanel = ({
             </TouchableOpacity>
           ))} */}
 
-          <View
-            // horizontal
-            // showsHorizontalScrollIndicator={false}
-            // contentContainerStyle={{
-            //   width: windowWidth,
-            //   backgroundColor: 'red',
-            // }}
-            style={styles.bottomBar}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{
+              paddingHorizontal: 20,
+              // backgroundColor: 'green',
+              // flexDirection: 'row',
+              alignItems: 'center',
+              paddingVertical: 12,
+              borderTopWidth: StyleSheet.hairlineWidth,
+              borderTopColor: 'rgba(0,0,0,0.08)',
+              gap: 12,
+              padding: 4,
+              // height: windowHeight / 10,
+              paddingLeft: '10',
+            }}
+            // style={styles.bottomBar}
           >
             {TOOLBAR_ITEMS?.map(item => {
               const isActive = activeTool === item?.key;
@@ -594,7 +641,7 @@ const ReaderPanel = ({
                 </TouchableOpacity>
               );
             })}
-          </View>
+          </ScrollView>
 
           {/* More View segment */}
           {/* <TouchableOpacity

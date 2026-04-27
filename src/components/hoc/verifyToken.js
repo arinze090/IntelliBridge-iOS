@@ -15,12 +15,12 @@ export default function verifyTokenWithoutApi(WrappedComponent) {
     const tokenSavedInRedux = state?.user?.accessToken;
     const lastTimeUserLoggedIn = state?.user?.lastLoginTime;
     const nowDate = Date.now();
-    console.log(
-      'nowwww',
-      nowDate,
-      lastTimeUserLoggedIn,
-      nowDate - lastTimeUserLoggedIn,
-    );
+    // console.log(
+    //   'nowwww',
+    //   nowDate,
+    //   lastTimeUserLoggedIn,
+    //   nowDate - lastTimeUserLoggedIn,
+    // );
 
     const navigation = useNavigation();
     const dispatch = useDispatch();

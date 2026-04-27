@@ -1,11 +1,10 @@
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import React from 'react';
+import React, { useState } from 'react';
 
 import { windowHeight, windowWidth } from '../../utils/Dimensions';
 import { useTheme } from '../../Context/ThemeContext';
 import { COLORS } from '../../themes/themes';
 import ProgressBar from '../common/ProgressBar';
-import { formatToNaira } from '../../Library/Common';
 
 const ReadingBookCard = ({ onPress, props, bookProgress }) => {
   // console.log('popppps:', props, bookProgress);

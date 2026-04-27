@@ -33,9 +33,13 @@ const LibraryBookDetails = ({ navigation, route }) => {
   const state = useSelector(state => state);
   const loggedInUser = state?.user?.user;
   const bookmarkedBooks = state?.books?.bookmarkedBooks || [];
-  const isBookBookmarked = bookmarkedBooks?.some(
-    book => book?._id === item?._id,
-  );
+  const bookId = item?.bookInfo?._id || item?._id;
+  const isBookBookmarked = bookmarkedBooks?.some(book => book?._id === bookId);
+
+  const bookLocations = state?.books?.bookLocations || {};
+  const currentBookLocation = bookLocations?.[bookId] || {};
+  const progress = currentBookLocation?.progress ?? item?.progress ?? 0;
+  // console.log('currentBookLocation', currentBookLocation, bookLocations);
 
   const [expanded, setExpanded] = useState(false);
   const [showToggle, setShowToggle] = useState(false);
@@ -64,7 +68,7 @@ const LibraryBookDetails = ({ navigation, route }) => {
         onRightIconPress={() => {
           bookmarkBook();
         }}
-        progress={item?.progress}
+        progress={progress}
       />
 
       {/* Book Information */}
@@ -111,7 +115,7 @@ const LibraryBookDetails = ({ navigation, route }) => {
             iconName={'book-outline'}
             props={item?.bookInfo?.bookFormat == 'epub' && 'E-book'}
           />
-          {item?.isbn && (
+          {item?.bookInfo?.isbn && (
             <CategoryCard
               iconName={'barcode-outline'}
               props={item?.bookInfo?.isbn && `ISBN: ${item?.bookInfo?.isbn}`}
@@ -183,10 +187,10 @@ const LibraryBookDetails = ({ navigation, route }) => {
           >
             Progress:{' '}
             <Text style={{ color: theme?.text, fontSize: 12 }}>
-              {item?.progress || 0}%
+              {progress}%
             </Text>
           </Text>
-          <ProgressBar progress={item?.progress || 0} />
+          <ProgressBar progress={progress} />
         </View>
         <ScrollViewSpace />
       </ScrollView>

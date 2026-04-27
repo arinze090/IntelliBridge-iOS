@@ -69,37 +69,35 @@ const booksSlice = createSlice({
       state.librarybooks = action.payload;
     },
     addBookmarkBookPage: (state, action) => {
-      const { bookId, location, text, page, bookInfo } = action.payload;
+      const { bookId, location, page, bookInfo } = action.payload;
+      if (!bookId || !location) return;
 
-      if (!state.bookmarkBookPages[bookId]) {
-        state.bookmarkBookPages[bookId] = {
-          bookInfo,
-          bookmarks: [
-            {
-              location,
-              page,
-              text: text || '',
-              createdAt: Date.now(),
-            },
-          ],
-        };
-        return;
+      // 🔥 FIX: ensure it's ALWAYS an object
+      if (!state.bookmarkBookPages || Array.isArray(state.bookmarkBookPages)) {
+        state.bookmarkBookPages = {};
       }
 
-      const book = state.bookmarkBookPages[bookId];
+      const key = String(bookId);
 
-      // safety guard (important for old data)
+      if (!state.bookmarkBookPages[key]) {
+        state.bookmarkBookPages[key] = {
+          bookInfo,
+          bookmarks: [],
+        };
+      }
+
+      const book = state.bookmarkBookPages[key];
+
       if (!Array.isArray(book.bookmarks)) {
         book.bookmarks = [];
       }
 
-      const exists = book.bookmarks.some(b => b?.location === location);
+      const exists = book.bookmarks.some(b => b.location === location);
 
       if (!exists) {
         book.bookmarks.push({
           location,
           page,
-          text: text || '',
           createdAt: Date.now(),
         });
       }
