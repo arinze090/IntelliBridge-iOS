@@ -111,6 +111,14 @@ const booksSlice = createSlice({
 
       book.bookmarks = book.bookmarks.filter(b => b?.location !== location);
     },
+    clearBookInformationPerUser: (state, action) => {
+      state.bookLocations = {};
+      state.bookmarkedBooks = [];
+      state.wishlistsBooks = [];
+      state.boughtBooks = [];
+      state.librarybooks = [];
+      state.bookmarkBookPages = {};
+    },
   },
 });
 

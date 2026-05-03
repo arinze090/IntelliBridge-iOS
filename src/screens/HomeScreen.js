@@ -144,11 +144,7 @@ const HomeScreen = ({ navigation }) => {
           />
           <TouchableOpacity
             activeOpacity={0.9}
-            onPress={() =>
-              navigation.navigate('Settings', {
-                screen: 'EditProfile',
-              })
-            }
+            onPress={() => navigation.navigate('EditProfile')}
           >
             <Image
               source={

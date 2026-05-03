@@ -32,6 +32,7 @@ import WishlistScreen from './settings/WishlistScreen';
 import BookOrdersScreen from './settings/BookOrdersScreen';
 import EditProfile from './settings/EditProfile';
 import LibraryBookDetails from './books/LibraryBookDetails';
+import HelpCenter from './settings/HelpCenterScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -97,6 +98,15 @@ const HomeStack = ({ navigation }) => (
       component={ResetPassword}
       options={{
         headerShown: false,
+      }}
+    />
+
+    <Stack.Screen
+      name="EditProfile"
+      component={EditProfile}
+      options={{
+        headerShown: false,
+        headerBackTitleVisible: false,
       }}
     />
 
@@ -263,6 +273,13 @@ const SettingsStack = () => {
       <Stack.Screen
         name="BookOrders"
         component={BookOrdersScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="HelpCenter"
+        component={HelpCenter}
         options={{
           headerShown: false,
         }}

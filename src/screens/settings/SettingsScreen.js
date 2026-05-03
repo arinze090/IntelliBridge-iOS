@@ -65,6 +65,11 @@ const settings = [
     name: 'FAQs',
     navigate: 'FAQs',
   },
+  {
+    iconName: 'nuclear-outline',
+    name: 'Help Center',
+    navigate: 'HelpCenter',
+  },
 ];
 
 const SettingsScreen = () => {
